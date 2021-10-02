@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -423,4 +423,14 @@ Signal::Signal(const Object *p_object, const StringName &p_name) {
 Signal::Signal(ObjectID p_object, const StringName &p_name) {
 	object = p_object;
 	name = p_name;
+}
+
+bool CallableComparator::operator()(const Variant &p_l, const Variant &p_r) const {
+	const Variant *args[2] = { &p_l, &p_r };
+	Callable::CallError err;
+	Variant res;
+	func.call(args, 2, res, err);
+	ERR_FAIL_COND_V_MSG(err.error != Callable::CallError::CALL_OK, false,
+			"Error calling compare method: " + Variant::get_callable_error_text(func, args, 1, err));
+	return res;
 }

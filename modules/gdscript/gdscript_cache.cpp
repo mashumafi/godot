@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -58,27 +58,27 @@ Error GDScriptParserRef::raise_status(Status p_new_status) {
 	while (p_new_status > status) {
 		switch (status) {
 			case EMPTY:
-				result = parser->parse(GDScriptCache::get_source_code(path), path, false);
 				status = PARSED;
+				result = parser->parse(GDScriptCache::get_source_code(path), path, false);
 				break;
 			case PARSED: {
 				analyzer = memnew(GDScriptAnalyzer(parser));
-				Error inheritance_result = analyzer->resolve_inheritance();
 				status = INHERITANCE_SOLVED;
+				Error inheritance_result = analyzer->resolve_inheritance();
 				if (result == OK) {
 					result = inheritance_result;
 				}
 			} break;
 			case INHERITANCE_SOLVED: {
-				Error interface_result = analyzer->resolve_interface();
 				status = INTERFACE_SOLVED;
+				Error interface_result = analyzer->resolve_interface();
 				if (result == OK) {
 					result = interface_result;
 				}
 			} break;
 			case INTERFACE_SOLVED: {
-				Error body_result = analyzer->resolve_body();
 				status = FULLY_SOLVED;
+				Error body_result = analyzer->resolve_body();
 				if (result == OK) {
 					result = body_result;
 				}
@@ -117,7 +117,7 @@ void GDScriptCache::remove_script(const String &p_path) {
 Ref<GDScriptParserRef> GDScriptCache::get_parser(const String &p_path, GDScriptParserRef::Status p_status, Error &r_error, const String &p_owner) {
 	MutexLock lock(singleton->lock);
 	Ref<GDScriptParserRef> ref;
-	if (p_owner != String()) {
+	if (!p_owner.is_empty()) {
 		singleton->dependencies[p_owner].insert(p_path);
 	}
 	if (singleton->parser_map.has(p_path)) {
@@ -163,7 +163,7 @@ String GDScriptCache::get_source_code(const String &p_path) {
 
 Ref<GDScript> GDScriptCache::get_shallow_script(const String &p_path, const String &p_owner) {
 	MutexLock lock(singleton->lock);
-	if (p_owner != String()) {
+	if (!p_owner.is_empty()) {
 		singleton->dependencies[p_owner].insert(p_path);
 	}
 	if (singleton->full_gdscript_cache.has(p_path)) {
@@ -186,7 +186,7 @@ Ref<GDScript> GDScriptCache::get_shallow_script(const String &p_path, const Stri
 Ref<GDScript> GDScriptCache::get_full_script(const String &p_path, Error &r_error, const String &p_owner) {
 	MutexLock lock(singleton->lock);
 
-	if (p_owner != String()) {
+	if (!p_owner.is_empty()) {
 		singleton->dependencies[p_owner].insert(p_path);
 	}
 

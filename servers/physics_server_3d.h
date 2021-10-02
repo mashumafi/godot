@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -28,8 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef PHYSICS_SERVER_H
-#define PHYSICS_SERVER_H
+#ifndef PHYSICS_SERVER_3D_H
+#define PHYSICS_SERVER_3D_H
 
 #include "core/io/resource.h"
 #include "core/object/class_db.h"
@@ -48,6 +48,7 @@ public:
 	virtual real_t get_total_linear_damp() const = 0;
 
 	virtual Vector3 get_center_of_mass() const = 0;
+	virtual Vector3 get_center_of_mass_local() const = 0;
 	virtual Basis get_principal_inertia_axes() const = 0;
 	virtual real_t get_inverse_mass() const = 0; // get the mass
 	virtual Vector3 get_inverse_inertia() const = 0; // get density of this body space
@@ -64,12 +65,23 @@ public:
 
 	virtual Vector3 get_velocity_at_local_position(const Vector3 &p_position) const = 0;
 
-	virtual void add_central_force(const Vector3 &p_force) = 0;
-	virtual void add_force(const Vector3 &p_force, const Vector3 &p_position = Vector3()) = 0;
-	virtual void add_torque(const Vector3 &p_torque) = 0;
 	virtual void apply_central_impulse(const Vector3 &p_impulse) = 0;
 	virtual void apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position = Vector3()) = 0;
 	virtual void apply_torque_impulse(const Vector3 &p_impulse) = 0;
+
+	virtual void apply_central_force(const Vector3 &p_force) = 0;
+	virtual void apply_force(const Vector3 &p_force, const Vector3 &p_position = Vector3()) = 0;
+	virtual void apply_torque(const Vector3 &p_torque) = 0;
+
+	virtual void add_constant_central_force(const Vector3 &p_force) = 0;
+	virtual void add_constant_force(const Vector3 &p_force, const Vector3 &p_position = Vector3()) = 0;
+	virtual void add_constant_torque(const Vector3 &p_torque) = 0;
+
+	virtual void set_constant_force(const Vector3 &p_force) = 0;
+	virtual Vector3 get_constant_force() const = 0;
+
+	virtual void set_constant_torque(const Vector3 &p_torque) = 0;
+	virtual Vector3 get_constant_torque() const = 0;
 
 	virtual void set_sleep_state(bool p_sleep) = 0;
 	virtual bool is_sleeping() const = 0;
@@ -96,55 +108,18 @@ public:
 	PhysicsDirectBodyState3D();
 };
 
-class PhysicsShapeQueryParameters3D : public RefCounted {
-	GDCLASS(PhysicsShapeQueryParameters3D, RefCounted);
-	friend class PhysicsDirectSpaceState3D;
-
-	RES shape_ref;
-	RID shape;
-	Transform3D transform;
-	real_t margin = 0.0;
-	Set<RID> exclude;
-	uint32_t collision_mask = UINT32_MAX;
-
-	bool collide_with_bodies = true;
-	bool collide_with_areas = false;
-
-protected:
-	static void _bind_methods();
-
-public:
-	void set_shape(const RES &p_shape_ref);
-	RES get_shape() const;
-	void set_shape_rid(const RID &p_shape);
-	RID get_shape_rid() const;
-
-	void set_transform(const Transform3D &p_transform);
-	Transform3D get_transform() const;
-
-	void set_margin(real_t p_margin);
-	real_t get_margin() const;
-
-	void set_collision_mask(uint32_t p_collision_mask);
-	uint32_t get_collision_mask() const;
-
-	void set_exclude(const Vector<RID> &p_exclude);
-	Vector<RID> get_exclude() const;
-
-	void set_collide_with_bodies(bool p_enable);
-	bool is_collide_with_bodies_enabled() const;
-
-	void set_collide_with_areas(bool p_enable);
-	bool is_collide_with_areas_enabled() const;
-};
+class PhysicsRayQueryParameters3D;
+class PhysicsPointQueryParameters3D;
+class PhysicsShapeQueryParameters3D;
 
 class PhysicsDirectSpaceState3D : public Object {
 	GDCLASS(PhysicsDirectSpaceState3D, Object);
 
 private:
-	Dictionary _intersect_ray(const Vector3 &p_from, const Vector3 &p_to, const Vector<RID> &p_exclude = Vector<RID>(), uint32_t p_collision_mask = UINT32_MAX, bool p_collide_with_bodies = true, bool p_collide_with_areas = false);
+	Dictionary _intersect_ray(const Ref<PhysicsRayQueryParameters3D> &p_ray_query);
+	Array _intersect_point(const Ref<PhysicsPointQueryParameters3D> &p_point_query, int p_max_results = 32);
 	Array _intersect_shape(const Ref<PhysicsShapeQueryParameters3D> &p_shape_query, int p_max_results = 32);
-	Array _cast_motion(const Ref<PhysicsShapeQueryParameters3D> &p_shape_query, const Vector3 &p_motion);
+	Array _cast_motion(const Ref<PhysicsShapeQueryParameters3D> &p_shape_query);
 	Array _collide_shape(const Ref<PhysicsShapeQueryParameters3D> &p_shape_query, int p_max_results = 32);
 	Dictionary _get_rest_info(const Ref<PhysicsShapeQueryParameters3D> &p_shape_query);
 
@@ -152,14 +127,20 @@ protected:
 	static void _bind_methods();
 
 public:
-	struct ShapeResult {
-		RID rid;
-		ObjectID collider_id;
-		Object *collider = nullptr;
-		int shape = 0;
-	};
+	struct RayParameters {
+		Vector3 from;
+		Vector3 to;
+		Set<RID> exclude;
+		uint32_t collision_mask = UINT32_MAX;
 
-	virtual int intersect_point(const Vector3 &p_point, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude = Set<RID>(), uint32_t p_collision_mask = UINT32_MAX, bool p_collide_with_bodies = true, bool p_collide_with_areas = false) = 0;
+		bool collide_with_bodies = true;
+		bool collide_with_areas = false;
+
+		bool hit_from_inside = false;
+		bool hit_back_faces = true;
+
+		bool pick_ray = false;
+	};
 
 	struct RayResult {
 		Vector3 position;
@@ -170,9 +151,37 @@ public:
 		int shape = 0;
 	};
 
-	virtual bool intersect_ray(const Vector3 &p_from, const Vector3 &p_to, RayResult &r_result, const Set<RID> &p_exclude = Set<RID>(), uint32_t p_collision_mask = UINT32_MAX, bool p_collide_with_bodies = true, bool p_collide_with_areas = false, bool p_pick_ray = false) = 0;
+	virtual bool intersect_ray(const RayParameters &p_parameters, RayResult &r_result) = 0;
 
-	virtual int intersect_shape(const RID &p_shape, const Transform3D &p_xform, real_t p_margin, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude = Set<RID>(), uint32_t p_collision_mask = UINT32_MAX, bool p_collide_with_bodies = true, bool p_collide_with_areas = false) = 0;
+	struct ShapeResult {
+		RID rid;
+		ObjectID collider_id;
+		Object *collider = nullptr;
+		int shape = 0;
+	};
+
+	struct PointParameters {
+		Vector3 position;
+		Set<RID> exclude;
+		uint32_t collision_mask = UINT32_MAX;
+
+		bool collide_with_bodies = true;
+		bool collide_with_areas = false;
+	};
+
+	virtual int intersect_point(const PointParameters &p_parameters, ShapeResult *r_results, int p_result_max) = 0;
+
+	struct ShapeParameters {
+		RID shape_rid;
+		Transform3D transform;
+		Vector3 motion;
+		real_t margin = 0.0;
+		Set<RID> exclude;
+		uint32_t collision_mask = UINT32_MAX;
+
+		bool collide_with_bodies = true;
+		bool collide_with_areas = false;
+	};
 
 	struct ShapeRestInfo {
 		Vector3 point;
@@ -180,14 +189,13 @@ public:
 		RID rid;
 		ObjectID collider_id;
 		int shape = 0;
-		Vector3 linear_velocity; //velocity at contact point
+		Vector3 linear_velocity; // Velocity at contact point.
 	};
 
-	virtual bool cast_motion(const RID &p_shape, const Transform3D &p_xform, const Vector3 &p_motion, real_t p_margin, real_t &p_closest_safe, real_t &p_closest_unsafe, const Set<RID> &p_exclude = Set<RID>(), uint32_t p_collision_mask = UINT32_MAX, bool p_collide_with_bodies = true, bool p_collide_with_areas = false, ShapeRestInfo *r_info = nullptr) = 0;
-
-	virtual bool collide_shape(RID p_shape, const Transform3D &p_shape_xform, real_t p_margin, Vector3 *r_results, int p_result_max, int &r_result_count, const Set<RID> &p_exclude = Set<RID>(), uint32_t p_collision_mask = UINT32_MAX, bool p_collide_with_bodies = true, bool p_collide_with_areas = false) = 0;
-
-	virtual bool rest_info(RID p_shape, const Transform3D &p_shape_xform, real_t p_margin, ShapeRestInfo *r_info, const Set<RID> &p_exclude = Set<RID>(), uint32_t p_collision_mask = UINT32_MAX, bool p_collide_with_bodies = true, bool p_collide_with_areas = false) = 0;
+	virtual int intersect_shape(const ShapeParameters &p_parameters, ShapeResult *r_results, int p_result_max) = 0;
+	virtual bool cast_motion(const ShapeParameters &p_parameters, real_t &p_closest_safe, real_t &p_closest_unsafe, ShapeRestInfo *r_info = nullptr) = 0;
+	virtual bool collide_shape(const ShapeParameters &p_parameters, Vector3 *r_results, int p_result_max, int &r_result_count) = 0;
+	virtual bool rest_info(const ShapeParameters &p_parameters, ShapeRestInfo *r_info) = 0;
 
 	virtual Vector3 get_closest_point_to_object_volume(RID p_object, const Vector3 p_point) const = 0;
 
@@ -203,6 +211,7 @@ public:
 	virtual ~RenderingServerHandler() {}
 };
 
+class PhysicsTestMotionParameters3D;
 class PhysicsTestMotionResult3D;
 
 class PhysicsServer3D : public Object {
@@ -210,7 +219,7 @@ class PhysicsServer3D : public Object {
 
 	static PhysicsServer3D *singleton;
 
-	virtual bool _body_test_motion(RID p_body, const Transform3D &p_from, const Vector3 &p_motion, real_t p_margin = 0.001, const Ref<PhysicsTestMotionResult3D> &p_result = Ref<PhysicsTestMotionResult3D>(), bool p_collide_separation_ray = false, const Vector<RID> &p_exclude = Vector<RID>(), int p_max_collisions = 1);
+	virtual bool _body_test_motion(RID p_body, const Ref<PhysicsTestMotionParameters3D> &p_parameters, const Ref<PhysicsTestMotionResult3D> &p_result = Ref<PhysicsTestMotionResult3D>());
 
 protected:
 	static void _bind_methods();
@@ -265,12 +274,12 @@ public:
 	enum SpaceParameter {
 		SPACE_PARAM_CONTACT_RECYCLE_RADIUS,
 		SPACE_PARAM_CONTACT_MAX_SEPARATION,
-		SPACE_PARAM_BODY_MAX_ALLOWED_PENETRATION,
+		SPACE_PARAM_CONTACT_MAX_ALLOWED_PENETRATION,
+		SPACE_PARAM_CONTACT_DEFAULT_BIAS,
 		SPACE_PARAM_BODY_LINEAR_VELOCITY_SLEEP_THRESHOLD,
 		SPACE_PARAM_BODY_ANGULAR_VELOCITY_SLEEP_THRESHOLD,
 		SPACE_PARAM_BODY_TIME_TO_SLEEP,
-		SPACE_PARAM_BODY_ANGULAR_VELOCITY_DAMP_RATIO,
-		SPACE_PARAM_CONSTRAINT_DEFAULT_BIAS,
+		SPACE_PARAM_SOLVER_ITERATIONS,
 	};
 
 	virtual void space_set_param(RID p_space, SpaceParameter p_param, real_t p_value) = 0;
@@ -290,12 +299,15 @@ public:
 	//missing attenuation? missing better override?
 
 	enum AreaParameter {
+		AREA_PARAM_GRAVITY_OVERRIDE_MODE,
 		AREA_PARAM_GRAVITY,
 		AREA_PARAM_GRAVITY_VECTOR,
 		AREA_PARAM_GRAVITY_IS_POINT,
 		AREA_PARAM_GRAVITY_DISTANCE_SCALE,
 		AREA_PARAM_GRAVITY_POINT_ATTENUATION,
+		AREA_PARAM_LINEAR_DAMP_OVERRIDE_MODE,
 		AREA_PARAM_LINEAR_DAMP,
+		AREA_PARAM_ANGULAR_DAMP_OVERRIDE_MODE,
 		AREA_PARAM_ANGULAR_DAMP,
 		AREA_PARAM_PRIORITY,
 		AREA_PARAM_WIND_FORCE_MAGNITUDE,
@@ -316,9 +328,6 @@ public:
 		AREA_SPACE_OVERRIDE_REPLACE,
 		AREA_SPACE_OVERRIDE_REPLACE_COMBINE
 	};
-
-	virtual void area_set_space_override_mode(RID p_area, AreaSpaceOverrideMode p_mode) = 0;
-	virtual AreaSpaceOverrideMode area_get_space_override_mode(RID p_area) const = 0;
 
 	virtual void area_add_shape(RID p_area, RID p_shape, const Transform3D &p_transform = Transform3D(), bool p_disabled = false) = 0;
 	virtual void area_set_shape(RID p_area, int p_shape_idx, RID p_shape) = 0;
@@ -347,8 +356,8 @@ public:
 
 	virtual void area_set_monitorable(RID p_area, bool p_monitorable) = 0;
 
-	virtual void area_set_monitor_callback(RID p_area, Object *p_receiver, const StringName &p_method) = 0;
-	virtual void area_set_area_monitor_callback(RID p_area, Object *p_receiver, const StringName &p_method) = 0;
+	virtual void area_set_monitor_callback(RID p_area, const Callable &p_callback) = 0;
+	virtual void area_set_area_monitor_callback(RID p_area, const Callable &p_callback) = 0;
 
 	virtual void area_set_ray_pickable(RID p_area, bool p_enable) = 0;
 
@@ -361,6 +370,11 @@ public:
 		BODY_MODE_KINEMATIC,
 		BODY_MODE_DYNAMIC,
 		BODY_MODE_DYNAMIC_LINEAR,
+	};
+
+	enum BodyDampMode {
+		BODY_DAMP_MODE_COMBINE,
+		BODY_DAMP_MODE_REPLACE,
 	};
 
 	virtual RID body_create() = 0;
@@ -407,6 +421,8 @@ public:
 		BODY_PARAM_INERTIA,
 		BODY_PARAM_CENTER_OF_MASS,
 		BODY_PARAM_GRAVITY_SCALE,
+		BODY_PARAM_LINEAR_DAMP_MODE,
+		BODY_PARAM_ANGULAR_DAMP_MODE,
 		BODY_PARAM_LINEAR_DAMP,
 		BODY_PARAM_ANGULAR_DAMP,
 		BODY_PARAM_MAX,
@@ -429,20 +445,24 @@ public:
 	virtual void body_set_state(RID p_body, BodyState p_state, const Variant &p_variant) = 0;
 	virtual Variant body_get_state(RID p_body, BodyState p_state) const = 0;
 
-	//do something about it
-	virtual void body_set_applied_force(RID p_body, const Vector3 &p_force) = 0;
-	virtual Vector3 body_get_applied_force(RID p_body) const = 0;
-
-	virtual void body_set_applied_torque(RID p_body, const Vector3 &p_torque) = 0;
-	virtual Vector3 body_get_applied_torque(RID p_body) const = 0;
-
-	virtual void body_add_central_force(RID p_body, const Vector3 &p_force) = 0;
-	virtual void body_add_force(RID p_body, const Vector3 &p_force, const Vector3 &p_position = Vector3()) = 0;
-	virtual void body_add_torque(RID p_body, const Vector3 &p_torque) = 0;
-
 	virtual void body_apply_central_impulse(RID p_body, const Vector3 &p_impulse) = 0;
 	virtual void body_apply_impulse(RID p_body, const Vector3 &p_impulse, const Vector3 &p_position = Vector3()) = 0;
 	virtual void body_apply_torque_impulse(RID p_body, const Vector3 &p_impulse) = 0;
+
+	virtual void body_apply_central_force(RID p_body, const Vector3 &p_force) = 0;
+	virtual void body_apply_force(RID p_body, const Vector3 &p_force, const Vector3 &p_position = Vector3()) = 0;
+	virtual void body_apply_torque(RID p_body, const Vector3 &p_torque) = 0;
+
+	virtual void body_add_constant_central_force(RID p_body, const Vector3 &p_force) = 0;
+	virtual void body_add_constant_force(RID p_body, const Vector3 &p_force, const Vector3 &p_position = Vector3()) = 0;
+	virtual void body_add_constant_torque(RID p_body, const Vector3 &p_torque) = 0;
+
+	virtual void body_set_constant_force(RID p_body, const Vector3 &p_force) = 0;
+	virtual Vector3 body_get_constant_force(RID p_body) const = 0;
+
+	virtual void body_set_constant_torque(RID p_body, const Vector3 &p_torque) = 0;
+	virtual Vector3 body_get_constant_torque(RID p_body) const = 0;
+
 	virtual void body_set_axis_velocity(RID p_body, const Vector3 &p_axis_velocity) = 0;
 
 	enum BodyAxis {
@@ -483,6 +503,23 @@ public:
 	// this function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectBodyState3D *body_get_direct_state(RID p_body) = 0;
 
+	struct MotionParameters {
+		Transform3D from;
+		Vector3 motion;
+		real_t margin = 0.001;
+		int max_collisions = 1;
+		bool collide_separation_ray = false;
+		Set<RID> exclude_bodies;
+		Set<ObjectID> exclude_objects;
+
+		MotionParameters() {}
+
+		MotionParameters(const Transform3D &p_from, const Vector3 &p_motion, real_t p_margin = 0.001) :
+				from(p_from),
+				motion(p_motion),
+				margin(p_margin) {}
+	};
+
 	struct MotionCollision {
 		Vector3 position;
 		Vector3 normal;
@@ -501,15 +538,15 @@ public:
 	struct MotionResult {
 		Vector3 travel;
 		Vector3 remainder;
-		real_t safe_fraction = 0.0;
-		real_t unsafe_fraction = 0.0;
+		real_t collision_safe_fraction = 0.0;
+		real_t collision_unsafe_fraction = 0.0;
 
 		static const int MAX_COLLISIONS = 32;
 		MotionCollision collisions[MAX_COLLISIONS];
 		int collision_count = 0;
 	};
 
-	virtual bool body_test_motion(RID p_body, const Transform3D &p_from, const Vector3 &p_motion, real_t p_margin = 0.001, MotionResult *r_result = nullptr, int p_max_collisions = 1, bool p_collide_separation_ray = false, const Set<RID> &p_exclude = Set<RID>()) = 0;
+	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) = 0;
 
 	/* SOFT BODY */
 
@@ -746,8 +783,6 @@ public:
 
 	virtual bool is_flushing_queries() const = 0;
 
-	virtual void set_collision_iterations(int p_iterations) = 0;
-
 	enum ProcessInfo {
 		INFO_ACTIVE_OBJECTS,
 		INFO_COLLISION_PAIRS,
@@ -760,11 +795,147 @@ public:
 	~PhysicsServer3D();
 };
 
+class PhysicsRayQueryParameters3D : public RefCounted {
+	GDCLASS(PhysicsRayQueryParameters3D, RefCounted);
+
+	PhysicsDirectSpaceState3D::RayParameters parameters;
+
+protected:
+	static void _bind_methods();
+
+public:
+	const PhysicsDirectSpaceState3D::RayParameters &get_parameters() const { return parameters; }
+
+	void set_from(const Vector3 &p_from) { parameters.from = p_from; }
+	const Vector3 &get_from() const { return parameters.from; }
+
+	void set_to(const Vector3 &p_to) { parameters.to = p_to; }
+	const Vector3 &get_to() const { return parameters.to; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+
+	void set_hit_from_inside(bool p_enable) { parameters.hit_from_inside = p_enable; }
+	bool is_hit_from_inside_enabled() const { return parameters.hit_from_inside; }
+
+	void set_hit_back_faces(bool p_enable) { parameters.hit_back_faces = p_enable; }
+	bool is_hit_back_faces_enabled() const { return parameters.hit_back_faces; }
+
+	void set_exclude(const Vector<RID> &p_exclude);
+	Vector<RID> get_exclude() const;
+};
+
+class PhysicsPointQueryParameters3D : public RefCounted {
+	GDCLASS(PhysicsPointQueryParameters3D, RefCounted);
+
+	PhysicsDirectSpaceState3D::PointParameters parameters;
+
+protected:
+	static void _bind_methods();
+
+public:
+	const PhysicsDirectSpaceState3D::PointParameters &get_parameters() const { return parameters; }
+
+	void set_position(const Vector3 &p_position) { parameters.position = p_position; }
+	const Vector3 &get_position() const { return parameters.position; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+
+	void set_exclude(const Vector<RID> &p_exclude);
+	Vector<RID> get_exclude() const;
+};
+
+class PhysicsShapeQueryParameters3D : public RefCounted {
+	GDCLASS(PhysicsShapeQueryParameters3D, RefCounted);
+
+	PhysicsDirectSpaceState3D::ShapeParameters parameters;
+
+	RES shape_ref;
+
+protected:
+	static void _bind_methods();
+
+public:
+	const PhysicsDirectSpaceState3D::ShapeParameters &get_parameters() const { return parameters; }
+
+	void set_shape(const RES &p_shape_ref);
+	RES get_shape() const { return shape_ref; }
+
+	void set_shape_rid(const RID &p_shape);
+	RID get_shape_rid() const { return parameters.shape_rid; }
+
+	void set_transform(const Transform3D &p_transform) { parameters.transform = p_transform; }
+	const Transform3D &get_transform() const { return parameters.transform; }
+
+	void set_motion(const Vector3 &p_motion) { parameters.motion = p_motion; }
+	const Vector3 &get_motion() const { return parameters.motion; }
+
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+	real_t get_margin() const { return parameters.margin; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+
+	void set_exclude(const Vector<RID> &p_exclude);
+	Vector<RID> get_exclude() const;
+};
+
+class PhysicsTestMotionParameters3D : public RefCounted {
+	GDCLASS(PhysicsTestMotionParameters3D, RefCounted);
+
+	PhysicsServer3D::MotionParameters parameters;
+
+protected:
+	static void _bind_methods();
+
+public:
+	const PhysicsServer3D::MotionParameters &get_parameters() const { return parameters; }
+
+	const Transform3D &get_from() const { return parameters.from; }
+	void set_from(const Transform3D &p_from) { parameters.from = p_from; }
+
+	const Vector3 &get_motion() const { return parameters.motion; }
+	void set_motion(const Vector3 &p_motion) { parameters.motion = p_motion; }
+
+	real_t get_margin() const { return parameters.margin; }
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+
+	int get_max_collisions() const { return parameters.max_collisions; }
+	void set_max_collisions(int p_max_collisions) { parameters.max_collisions = p_max_collisions; }
+
+	bool is_collide_separation_ray_enabled() const { return parameters.collide_separation_ray; }
+	void set_collide_separation_ray_enabled(bool p_enabled) { parameters.collide_separation_ray = p_enabled; }
+
+	Vector<RID> get_exclude_bodies() const;
+	void set_exclude_bodies(const Vector<RID> &p_exclude);
+
+	Array get_exclude_objects() const;
+	void set_exclude_objects(const Array &p_exclude);
+};
+
 class PhysicsTestMotionResult3D : public RefCounted {
 	GDCLASS(PhysicsTestMotionResult3D, RefCounted);
 
 	PhysicsServer3D::MotionResult result;
-	friend class PhysicsServer3D;
 
 protected:
 	static void _bind_methods();
@@ -774,8 +945,8 @@ public:
 
 	Vector3 get_travel() const;
 	Vector3 get_remainder() const;
-	real_t get_safe_fraction() const;
-	real_t get_unsafe_fraction() const;
+	real_t get_collision_safe_fraction() const;
+	real_t get_collision_unsafe_fraction() const;
 
 	int get_collision_count() const;
 
@@ -786,16 +957,8 @@ public:
 	RID get_collider_rid(int p_collision_index = 0) const;
 	Object *get_collider(int p_collision_index = 0) const;
 	int get_collider_shape(int p_collision_index = 0) const;
+	int get_collision_local_shape(int p_collision_index = 0) const;
 	real_t get_collision_depth(int p_collision_index = 0) const;
-
-	Vector3 get_best_collision_point() const;
-	Vector3 get_best_collision_normal() const;
-	Vector3 get_best_collider_velocity() const;
-	ObjectID get_best_collider_id() const;
-	RID get_best_collider_rid() const;
-	Object *get_best_collider() const;
-	int get_best_collider_shape() const;
-	real_t get_best_collision_depth() const;
 };
 
 typedef PhysicsServer3D *(*CreatePhysicsServer3DCallback)();
@@ -815,10 +978,9 @@ class PhysicsServer3DManager {
 				name(p_ci.name),
 				create_callback(p_ci.create_callback) {}
 
-		ClassInfo &operator=(const ClassInfo &p_ci) {
+		void operator=(const ClassInfo &p_ci) {
 			name = p_ci.name;
 			create_callback = p_ci.create_callback;
-			return *this;
 		}
 	};
 
@@ -848,6 +1010,7 @@ VARIANT_ENUM_CAST(PhysicsServer3D::AreaParameter);
 VARIANT_ENUM_CAST(PhysicsServer3D::AreaSpaceOverrideMode);
 VARIANT_ENUM_CAST(PhysicsServer3D::BodyMode);
 VARIANT_ENUM_CAST(PhysicsServer3D::BodyParameter);
+VARIANT_ENUM_CAST(PhysicsServer3D::BodyDampMode);
 VARIANT_ENUM_CAST(PhysicsServer3D::BodyState);
 VARIANT_ENUM_CAST(PhysicsServer3D::BodyAxis);
 VARIANT_ENUM_CAST(PhysicsServer3D::PinJointParam);
@@ -861,4 +1024,4 @@ VARIANT_ENUM_CAST(PhysicsServer3D::G6DOFJointAxisFlag);
 VARIANT_ENUM_CAST(PhysicsServer3D::AreaBodyStatus);
 VARIANT_ENUM_CAST(PhysicsServer3D::ProcessInfo);
 
-#endif
+#endif // PHYSICS_SERVER_3D_H

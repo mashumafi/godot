@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -94,7 +94,7 @@ Rect2 AnimatedSprite2D::_get_rect() const {
 
 	Point2 ofs = offset;
 	if (centered) {
-		ofs -= Size2(s) / 2;
+		ofs -= s / 2;
 	}
 
 	if (s == Size2(0, 0)) {
@@ -122,13 +122,13 @@ void AnimatedSprite2D::_validate_property(PropertyInfo &property) const {
 			}
 
 			property.hint_string += String(E->get());
-			if (animation == E) {
+			if (animation == E->get()) {
 				current_found = true;
 			}
 		}
 
 		if (!current_found) {
-			if (property.hint_string == String()) {
+			if (property.hint_string.is_empty()) {
 				property.hint_string = String(animation);
 			} else {
 				property.hint_string = String(animation) + "," + property.hint_string;
@@ -228,8 +228,7 @@ void AnimatedSprite2D::_notification(int p_what) {
 
 			RID ci = get_canvas_item();
 
-			Size2i s;
-			s = texture->get_size();
+			Size2 s = texture->get_size();
 			Point2 ofs = offset;
 			if (centered) {
 				ofs -= s / 2;
@@ -367,7 +366,7 @@ void AnimatedSprite2D::_res_changed() {
 	update();
 }
 
-void AnimatedSprite2D::_set_playing(bool p_playing) {
+void AnimatedSprite2D::set_playing(bool p_playing) {
 	if (playing == p_playing) {
 		return;
 	}
@@ -376,7 +375,7 @@ void AnimatedSprite2D::_set_playing(bool p_playing) {
 	set_process_internal(playing);
 }
 
-bool AnimatedSprite2D::_is_playing() const {
+bool AnimatedSprite2D::is_playing() const {
 	return playing;
 }
 
@@ -390,15 +389,11 @@ void AnimatedSprite2D::play(const StringName &p_animation, const bool p_backward
 		}
 	}
 
-	_set_playing(true);
+	set_playing(true);
 }
 
 void AnimatedSprite2D::stop() {
-	_set_playing(false);
-}
-
-bool AnimatedSprite2D::is_playing() const {
-	return playing;
+	set_playing(false);
 }
 
 double AnimatedSprite2D::_get_frame_duration() {
@@ -456,12 +451,11 @@ void AnimatedSprite2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_animation", "animation"), &AnimatedSprite2D::set_animation);
 	ClassDB::bind_method(D_METHOD("get_animation"), &AnimatedSprite2D::get_animation);
 
-	ClassDB::bind_method(D_METHOD("_set_playing", "playing"), &AnimatedSprite2D::_set_playing);
-	ClassDB::bind_method(D_METHOD("_is_playing"), &AnimatedSprite2D::_is_playing);
+	ClassDB::bind_method(D_METHOD("set_playing", "playing"), &AnimatedSprite2D::set_playing);
+	ClassDB::bind_method(D_METHOD("is_playing"), &AnimatedSprite2D::is_playing);
 
 	ClassDB::bind_method(D_METHOD("play", "anim", "backwards"), &AnimatedSprite2D::play, DEFVAL(StringName()), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("stop"), &AnimatedSprite2D::stop);
-	ClassDB::bind_method(D_METHOD("is_playing"), &AnimatedSprite2D::is_playing);
 
 	ClassDB::bind_method(D_METHOD("set_centered", "centered"), &AnimatedSprite2D::set_centered);
 	ClassDB::bind_method(D_METHOD("is_centered"), &AnimatedSprite2D::is_centered);
@@ -489,7 +483,7 @@ void AnimatedSprite2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "animation"), "set_animation", "get_animation");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "frame"), "set_frame", "get_frame");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "speed_scale"), "set_speed_scale", "get_speed_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "playing"), "_set_playing", "_is_playing");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "playing"), "set_playing", "is_playing");
 	ADD_GROUP("Offset", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "centered"), "set_centered", "is_centered");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset"), "set_offset", "get_offset");

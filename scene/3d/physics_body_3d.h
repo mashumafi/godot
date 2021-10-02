@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -50,11 +50,11 @@ protected:
 
 	uint16_t locked_axis = 0;
 
-	Ref<KinematicCollision3D> _move(const Vector3 &p_motion, bool p_test_only = false, real_t p_margin = 0.001, int p_max_collisions = 1);
+	Ref<KinematicCollision3D> _move(const Vector3 &p_linear_velocity, bool p_test_only = false, real_t p_margin = 0.001, int p_max_collisions = 1);
 
 public:
-	bool move_and_collide(const Vector3 &p_motion, PhysicsServer3D::MotionResult &r_result, real_t p_margin, bool p_test_only = false, int p_max_collisions = 1, bool p_cancel_sliding = true, bool p_collide_separation_ray = false, const Set<RID> &p_exclude = Set<RID>());
-	bool test_move(const Transform3D &p_from, const Vector3 &p_motion, const Ref<KinematicCollision3D> &r_collision = Ref<KinematicCollision3D>(), real_t p_margin = 0.001, int p_max_collisions = 1);
+	bool move_and_collide(const PhysicsServer3D::MotionParameters &p_parameters, PhysicsServer3D::MotionResult &r_result, bool p_test_only = false, bool p_cancel_sliding = true);
+	bool test_move(const Transform3D &p_from, const Vector3 &p_linear_velocity, const Ref<KinematicCollision3D> &r_collision = Ref<KinematicCollision3D>(), real_t p_margin = 0.001, int p_max_collisions = 1);
 
 	void set_axis_lock(PhysicsServer3D::BodyAxis p_axis, bool p_lock);
 	bool get_axis_lock(PhysicsServer3D::BodyAxis p_axis) const;
@@ -143,6 +143,11 @@ public:
 		CENTER_OF_MASS_MODE_CUSTOM,
 	};
 
+	enum DampMode {
+		DAMP_MODE_COMBINE,
+		DAMP_MODE_REPLACE,
+	};
+
 private:
 	bool can_sleep = true;
 	bool lock_rotation = false;
@@ -160,8 +165,12 @@ private:
 	Vector3 angular_velocity;
 	Basis inverse_inertia_tensor;
 	real_t gravity_scale = 1.0;
-	real_t linear_damp = -1.0;
-	real_t angular_damp = -1.0;
+
+	DampMode linear_damp_mode = DAMP_MODE_COMBINE;
+	DampMode angular_damp_mode = DAMP_MODE_COMBINE;
+
+	real_t linear_damp = 0.0;
+	real_t angular_damp = 0.0;
 
 	bool sleeping = false;
 	bool ccd = false;
@@ -265,6 +274,12 @@ public:
 	void set_gravity_scale(real_t p_gravity_scale);
 	real_t get_gravity_scale() const;
 
+	void set_linear_damp_mode(DampMode p_mode);
+	DampMode get_linear_damp_mode() const;
+
+	void set_angular_damp_mode(DampMode p_mode);
+	DampMode get_angular_damp_mode() const;
+
 	void set_linear_damp(real_t p_linear_damp);
 	real_t get_linear_damp() const;
 
@@ -291,13 +306,23 @@ public:
 
 	Array get_colliding_bodies() const;
 
-	void add_central_force(const Vector3 &p_force);
-	void add_force(const Vector3 &p_force, const Vector3 &p_position = Vector3());
-	void add_torque(const Vector3 &p_torque);
-
 	void apply_central_impulse(const Vector3 &p_impulse);
 	void apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position = Vector3());
 	void apply_torque_impulse(const Vector3 &p_impulse);
+
+	void apply_central_force(const Vector3 &p_force);
+	void apply_force(const Vector3 &p_force, const Vector3 &p_position = Vector3());
+	void apply_torque(const Vector3 &p_torque);
+
+	void add_constant_central_force(const Vector3 &p_force);
+	void add_constant_force(const Vector3 &p_force, const Vector3 &p_position = Vector3());
+	void add_constant_torque(const Vector3 &p_torque);
+
+	void set_constant_force(const Vector3 &p_force);
+	Vector3 get_constant_force() const;
+
+	void set_constant_torque(const Vector3 &p_torque);
+	Vector3 get_constant_torque() const;
 
 	virtual TypedArray<String> get_configuration_warnings() const override;
 
@@ -310,6 +335,7 @@ private:
 
 VARIANT_ENUM_CAST(RigidDynamicBody3D::FreezeMode);
 VARIANT_ENUM_CAST(RigidDynamicBody3D::CenterOfMassMode);
+VARIANT_ENUM_CAST(RigidDynamicBody3D::DampMode);
 
 class KinematicCollision3D;
 
@@ -383,6 +409,7 @@ private:
 	int max_slides = 6;
 	int platform_layer = 0;
 	RID platform_rid;
+	ObjectID platform_object_id;
 	uint32_t moving_platform_floor_layers = UINT32_MAX;
 	uint32_t moving_platform_wall_layers = 0;
 	real_t floor_snap_length = 0.1;
@@ -487,22 +514,17 @@ public:
 	Object *get_collider_shape(int p_collision_index = 0) const;
 	int get_collider_shape_index(int p_collision_index = 0) const;
 	Vector3 get_collider_velocity(int p_collision_index = 0) const;
-
-	Vector3 get_best_position() const;
-	Vector3 get_best_normal() const;
-	Object *get_best_local_shape() const;
-	Object *get_best_collider() const;
-	ObjectID get_best_collider_id() const;
-	RID get_best_collider_rid() const;
-	Object *get_best_collider_shape() const;
-	int get_best_collider_shape_index() const;
-	Vector3 get_best_collider_velocity() const;
 };
 
 class PhysicalBone3D : public PhysicsBody3D {
 	GDCLASS(PhysicalBone3D, PhysicsBody3D);
 
 public:
+	enum DampMode {
+		DAMP_MODE_COMBINE,
+		DAMP_MODE_REPLACE,
+	};
+
 	enum JointType {
 		JOINT_TYPE_NONE,
 		JOINT_TYPE_PIN,
@@ -641,9 +663,13 @@ private:
 	real_t mass = 1.0;
 	real_t friction = 1.0;
 	real_t gravity_scale = 1.0;
-	real_t linear_damp = -1.0;
-	real_t angular_damp = -1.0;
 	bool can_sleep = true;
+
+	DampMode linear_damp_mode = DAMP_MODE_COMBINE;
+	DampMode angular_damp_mode = DAMP_MODE_COMBINE;
+
+	real_t linear_damp = 0.0;
+	real_t angular_damp = 0.0;
 
 protected:
 	bool _set(const StringName &p_name, const Variant &p_value);
@@ -707,6 +733,12 @@ public:
 	void set_gravity_scale(real_t p_gravity_scale);
 	real_t get_gravity_scale() const;
 
+	void set_linear_damp_mode(DampMode p_mode);
+	DampMode get_linear_damp_mode() const;
+
+	void set_angular_damp_mode(DampMode p_mode);
+	DampMode get_angular_damp_mode() const;
+
 	void set_linear_damp(real_t p_linear_damp);
 	real_t get_linear_damp() const;
 
@@ -734,5 +766,6 @@ private:
 };
 
 VARIANT_ENUM_CAST(PhysicalBone3D::JointType);
+VARIANT_ENUM_CAST(PhysicalBone3D::DampMode);
 
 #endif // PHYSICS_BODY__H

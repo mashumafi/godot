@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -419,7 +419,7 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 	String mnt = get_mountpoint(p_path);
 
 	// If there is a directory "[Mountpoint]/.Trash-[UID], use it as the trash can.
-	if (mnt != "") {
+	if (!mnt.is_empty()) {
 		String path(mnt + "/.Trash-" + itos(getuid()));
 		struct stat s;
 		if (!stat(path.utf8().get_data(), &s)) {
@@ -428,23 +428,23 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 	}
 
 	// Otherwise, if ${XDG_DATA_HOME} is defined, use "${XDG_DATA_HOME}/Trash" as the trash can.
-	if (trash_path == "") {
+	if (trash_path.is_empty()) {
 		char *dhome = getenv("XDG_DATA_HOME");
 		if (dhome) {
-			trash_path = String(dhome) + "/Trash";
+			trash_path = String::utf8(dhome) + "/Trash";
 		}
 	}
 
 	// Otherwise, if ${HOME} is defined, use "${HOME}/.local/share/Trash" as the trash can.
-	if (trash_path == "") {
+	if (trash_path.is_empty()) {
 		char *home = getenv("HOME");
 		if (home) {
-			trash_path = String(home) + "/.local/share/Trash";
+			trash_path = String::utf8(home) + "/.local/share/Trash";
 		}
 	}
 
 	// Issue an error if none of the previous locations is appropriate for the trash can.
-	ERR_FAIL_COND_V_MSG(trash_path == "", FAILED, "Could not determine the trash can location");
+	ERR_FAIL_COND_V_MSG(trash_path.is_empty(), FAILED, "Could not determine the trash can location");
 
 	// Create needed directories for decided trash can location.
 	{
@@ -463,7 +463,10 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 	// The trash can is successfully created, now we check that we don't exceed our file name length limit.
 	// If the file name is too long trim it so we can add the identifying number and ".trashinfo".
 	// Assumes that the file name length limit is 255 characters.
-	String file_name = basename(p_path.utf8().get_data());
+	String file_name = p_path.get_file();
+	if (file_name.length() == 0) {
+		file_name = p_path.get_base_dir().get_file();
+	}
 	if (file_name.length() > 240) {
 		file_name = file_name.substr(0, file_name.length() - 15);
 	}

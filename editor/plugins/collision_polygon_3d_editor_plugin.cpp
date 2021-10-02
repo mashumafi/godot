@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -103,16 +103,16 @@ void CollisionPolygon3DEditor::_wip_close() {
 	undo_redo->commit_action();
 }
 
-bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) {
+EditorPlugin::AfterGUIInput CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) {
 	if (!node) {
-		return false;
+		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 	}
 
 	Transform3D gt = node->get_global_transform();
 	Transform3D gi = gt.affine_inverse();
 	float depth = _get_depth() * 0.5;
 	Vector3 n = gt.basis.get_axis(2).normalized();
-	Plane p(gt.origin + n * depth, n);
+	Plane p(n, gt.origin + n * depth);
 
 	Ref<InputEventMouseButton> mb = p_event;
 
@@ -124,7 +124,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 		Vector3 spoint;
 
 		if (!p.intersects_ray(ray_from, ray_dir, &spoint)) {
-			return false;
+			return EditorPlugin::AFTER_GUI_INPUT_PASS;
 		}
 
 		spoint = gi.xform(spoint);
@@ -142,7 +142,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 
 		switch (mode) {
 			case MODE_CREATE: {
-				if (mb->get_button_index() == MOUSE_BUTTON_LEFT && mb->is_pressed()) {
+				if (mb->get_button_index() == MouseButton::LEFT && mb->is_pressed()) {
 					if (!wip_active) {
 						wip.clear();
 						wip.push_back(cpoint);
@@ -151,29 +151,29 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 						snap_ignore = false;
 						_polygon_draw();
 						edited_point = 1;
-						return true;
+						return EditorPlugin::AFTER_GUI_INPUT_STOP;
 					} else {
 						if (wip.size() > 1 && p_camera->unproject_position(gt.xform(Vector3(wip[0].x, wip[0].y, depth))).distance_to(gpoint) < grab_threshold) {
 							//wip closed
 							_wip_close();
 
-							return true;
+							return EditorPlugin::AFTER_GUI_INPUT_STOP;
 						} else {
 							wip.push_back(cpoint);
 							edited_point = wip.size();
 							snap_ignore = false;
 							_polygon_draw();
-							return true;
+							return EditorPlugin::AFTER_GUI_INPUT_STOP;
 						}
 					}
-				} else if (mb->get_button_index() == MOUSE_BUTTON_RIGHT && mb->is_pressed() && wip_active) {
+				} else if (mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed() && wip_active) {
 					_wip_close();
 				}
 
 			} break;
 
 			case MODE_EDIT: {
-				if (mb->get_button_index() == MOUSE_BUTTON_LEFT) {
+				if (mb->get_button_index() == MouseButton::LEFT) {
 					if (mb->is_pressed()) {
 						if (mb->is_ctrl_pressed()) {
 							if (poly.size() < 3) {
@@ -184,7 +184,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 								undo_redo->add_do_method(this, "_polygon_draw");
 								undo_redo->add_undo_method(this, "_polygon_draw");
 								undo_redo->commit_action();
-								return true;
+								return EditorPlugin::AFTER_GUI_INPUT_STOP;
 							}
 
 							//search edges
@@ -219,7 +219,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 								_polygon_draw();
 								snap_ignore = true;
 
-								return true;
+								return EditorPlugin::AFTER_GUI_INPUT_STOP;
 							}
 						} else {
 							//look for points to move
@@ -244,7 +244,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 								edited_point_pos = poly[closest_idx];
 								_polygon_draw();
 								snap_ignore = false;
-								return true;
+								return EditorPlugin::AFTER_GUI_INPUT_STOP;
 							}
 						}
 					} else {
@@ -253,7 +253,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 						if (edited_point != -1) {
 							//apply
 
-							ERR_FAIL_INDEX_V(edited_point, poly.size(), false);
+							ERR_FAIL_INDEX_V(edited_point, poly.size(), EditorPlugin::AFTER_GUI_INPUT_PASS);
 							poly.write[edited_point] = edited_point_pos;
 							undo_redo->create_action(TTR("Edit Poly"));
 							undo_redo->add_do_method(node, "set_polygon", poly);
@@ -263,11 +263,11 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 							undo_redo->commit_action();
 
 							edited_point = -1;
-							return true;
+							return EditorPlugin::AFTER_GUI_INPUT_STOP;
 						}
 					}
 				}
-				if (mb->get_button_index() == MOUSE_BUTTON_RIGHT && mb->is_pressed() && edited_point == -1) {
+				if (mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed() && edited_point == -1) {
 					int closest_idx = -1;
 					Vector2 closest_pos;
 					real_t closest_dist = 1e10;
@@ -285,12 +285,12 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 					if (closest_idx >= 0) {
 						undo_redo->create_action(TTR("Edit Poly (Remove Point)"));
 						undo_redo->add_undo_method(node, "set_polygon", poly);
-						poly.remove(closest_idx);
+						poly.remove_at(closest_idx);
 						undo_redo->add_do_method(node, "set_polygon", poly);
 						undo_redo->add_do_method(this, "_polygon_draw");
 						undo_redo->add_undo_method(this, "_polygon_draw");
 						undo_redo->commit_action();
-						return true;
+						return EditorPlugin::AFTER_GUI_INPUT_STOP;
 					}
 				}
 
@@ -301,7 +301,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 	Ref<InputEventMouseMotion> mm = p_event;
 
 	if (mm.is_valid()) {
-		if (edited_point != -1 && (wip_active || mm->get_button_mask() & MOUSE_BUTTON_MASK_LEFT)) {
+		if (edited_point != -1 && (wip_active || (mm->get_button_mask() & MouseButton::MASK_LEFT) != MouseButton::NONE)) {
 			Vector2 gpoint = mm->get_position();
 
 			Vector3 ray_from = p_camera->project_ray_origin(gpoint);
@@ -310,14 +310,14 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 			Vector3 spoint;
 
 			if (!p.intersects_ray(ray_from, ray_dir, &spoint)) {
-				return false;
+				return EditorPlugin::AFTER_GUI_INPUT_PASS;
 			}
 
 			spoint = gi.xform(spoint);
 
 			Vector2 cpoint(spoint.x, spoint.y);
 
-			if (snap_ignore && !Input::get_singleton()->is_key_pressed(KEY_CTRL)) {
+			if (snap_ignore && !Input::get_singleton()->is_key_pressed(Key::CTRL)) {
 				snap_ignore = false;
 			}
 
@@ -332,7 +332,7 @@ bool CollisionPolygon3DEditor::forward_spatial_gui_input(Camera3D *p_camera, con
 		}
 	}
 
-	return false;
+	return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
 
 float CollisionPolygon3DEditor::_get_depth() {
@@ -358,6 +358,7 @@ void CollisionPolygon3DEditor::_polygon_draw() {
 
 	float depth = _get_depth() * 0.5;
 
+	m->clear_surfaces();
 	imesh->clear_surfaces();
 	imgeom->set_material_override(line_material);
 	imesh->surface_begin(Mesh::PRIMITIVE_LINES);

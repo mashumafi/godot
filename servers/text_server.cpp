@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -29,7 +29,7 @@
 /*************************************************************************/
 
 #include "servers/text_server.h"
-#include "scene/main/canvas_item.h"
+#include "servers/rendering_server.h"
 
 TextServerManager *TextServerManager::singleton = nullptr;
 
@@ -42,7 +42,7 @@ void TextServerManager::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("find_interface", "name"), &TextServerManager::find_interface);
 
 	ClassDB::bind_method(D_METHOD("set_primary_interface", "index"), &TextServerManager::set_primary_interface);
-	ClassDB::bind_method(D_METHOD("get_primary_interface"), &TextServerManager::_get_primary_interface);
+	ClassDB::bind_method(D_METHOD("get_primary_interface"), &TextServerManager::get_primary_interface);
 
 	ADD_SIGNAL(MethodInfo("interface_added", PropertyInfo(Variant::STRING_NAME, "interface_name")));
 	ADD_SIGNAL(MethodInfo("interface_removed", PropertyInfo(Variant::STRING_NAME, "interface_name")));
@@ -78,7 +78,7 @@ void TextServerManager::remove_interface(const Ref<TextServer> &p_interface) {
 	ERR_FAIL_COND(idx == -1);
 	print_verbose("TextServer: Removed interface \"" + p_interface->get_name() + "\"");
 	emit_signal(SNAME("interface_removed"), p_interface->get_name());
-	interfaces.remove(idx);
+	interfaces.remove_at(idx);
 }
 
 int TextServerManager::get_interface_count() const {
@@ -118,10 +118,6 @@ Array TextServerManager::get_interfaces() const {
 	return ret;
 }
 
-Ref<TextServer> TextServerManager::_get_primary_interface() const {
-	return primary_interface;
-}
-
 void TextServerManager::set_primary_interface(const Ref<TextServer> &p_primary_interface) {
 	if (p_primary_interface.is_null()) {
 		print_verbose("TextServer: Clearing primary interface");
@@ -145,7 +141,7 @@ TextServerManager::~TextServerManager() {
 		primary_interface.unref();
 	}
 	while (interfaces.size() > 0) {
-		interfaces.remove(0);
+		interfaces.remove_at(0);
 	}
 	singleton = nullptr;
 }
@@ -211,6 +207,15 @@ void TextServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_font"), &TextServer::create_font);
 
 	ClassDB::bind_method(D_METHOD("font_set_data", "font_rid", "data"), &TextServer::font_set_data);
+
+	ClassDB::bind_method(D_METHOD("font_set_style", "font_rid", "style"), &TextServer::font_set_style);
+	ClassDB::bind_method(D_METHOD("font_get_style", "font_rid"), &TextServer::font_get_style);
+
+	ClassDB::bind_method(D_METHOD("font_set_name", "font_rid", "name"), &TextServer::font_set_name);
+	ClassDB::bind_method(D_METHOD("font_get_name", "font_rid"), &TextServer::font_get_name);
+
+	ClassDB::bind_method(D_METHOD("font_set_style_name", "font_rid", "name"), &TextServer::font_set_style_name);
+	ClassDB::bind_method(D_METHOD("font_get_style_name", "font_rid"), &TextServer::font_get_style_name);
 
 	ClassDB::bind_method(D_METHOD("font_set_antialiased", "font_rid", "antialiased"), &TextServer::font_set_antialiased);
 	ClassDB::bind_method(D_METHOD("font_is_antialiased", "font_rid"), &TextServer::font_is_antialiased);
@@ -322,6 +327,9 @@ void TextServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("font_remove_script_support_override", "font_rid", "script"), &TextServer::font_remove_script_support_override);
 	ClassDB::bind_method(D_METHOD("font_get_script_support_overrides", "font_rid"), &TextServer::font_get_script_support_overrides);
 
+	ClassDB::bind_method(D_METHOD("font_set_opentype_feature_overrides", "font_rid", "overrides"), &TextServer::font_set_opentype_feature_overrides);
+	ClassDB::bind_method(D_METHOD("font_get_opentype_feature_overrides", "font_rid"), &TextServer::font_get_opentype_feature_overrides);
+
 	ClassDB::bind_method(D_METHOD("font_supported_feature_list", "font_rid"), &TextServer::font_supported_feature_list);
 	ClassDB::bind_method(D_METHOD("font_supported_variation_list", "font_rid"), &TextServer::font_supported_variation_list);
 
@@ -339,8 +347,12 @@ void TextServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("shaped_text_set_direction", "shaped", "direction"), &TextServer::shaped_text_set_direction, DEFVAL(DIRECTION_AUTO));
 	ClassDB::bind_method(D_METHOD("shaped_text_get_direction", "shaped"), &TextServer::shaped_text_get_direction);
+	ClassDB::bind_method(D_METHOD("shaped_text_get_inferred_direction", "shaped"), &TextServer::shaped_text_get_inferred_direction);
 
 	ClassDB::bind_method(D_METHOD("shaped_text_set_bidi_override", "shaped", "override"), &TextServer::shaped_text_set_bidi_override);
+
+	ClassDB::bind_method(D_METHOD("shaped_text_set_custom_punctuation", "shaped", "punct"), &TextServer::shaped_text_set_custom_punctuation);
+	ClassDB::bind_method(D_METHOD("shaped_text_get_custom_punctuation", "shaped"), &TextServer::shaped_text_get_custom_punctuation);
 
 	ClassDB::bind_method(D_METHOD("shaped_text_set_orientation", "shaped", "orientation"), &TextServer::shaped_text_set_orientation, DEFVAL(ORIENTATION_HORIZONTAL));
 	ClassDB::bind_method(D_METHOD("shaped_text_get_orientation", "shaped"), &TextServer::shaped_text_get_orientation);
@@ -352,8 +364,8 @@ void TextServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("shaped_text_get_preserve_control", "shaped"), &TextServer::shaped_text_get_preserve_control);
 
 	ClassDB::bind_method(D_METHOD("shaped_text_add_string", "shaped", "text", "fonts", "size", "opentype_features", "language"), &TextServer::shaped_text_add_string, DEFVAL(Dictionary()), DEFVAL(""));
-	ClassDB::bind_method(D_METHOD("shaped_text_add_object", "shaped", "key", "size", "inline_align", "length"), &TextServer::shaped_text_add_object, DEFVAL(INLINE_ALIGN_CENTER), DEFVAL(1));
-	ClassDB::bind_method(D_METHOD("shaped_text_resize_object", "shaped", "key", "size", "inline_align"), &TextServer::shaped_text_resize_object, DEFVAL(INLINE_ALIGN_CENTER));
+	ClassDB::bind_method(D_METHOD("shaped_text_add_object", "shaped", "key", "size", "inline_align", "length"), &TextServer::shaped_text_add_object, DEFVAL(INLINE_ALIGNMENT_CENTER), DEFVAL(1));
+	ClassDB::bind_method(D_METHOD("shaped_text_resize_object", "shaped", "key", "size", "inline_align"), &TextServer::shaped_text_resize_object, DEFVAL(INLINE_ALIGNMENT_CENTER));
 
 	ClassDB::bind_method(D_METHOD("shaped_text_substr", "shaped", "start", "length"), &TextServer::shaped_text_substr);
 	ClassDB::bind_method(D_METHOD("shaped_text_get_parent", "shaped"), &TextServer::shaped_text_get_parent);
@@ -395,6 +407,7 @@ void TextServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("shaped_text_hit_test_grapheme", "shaped", "coords"), &TextServer::shaped_text_hit_test_grapheme);
 	ClassDB::bind_method(D_METHOD("shaped_text_hit_test_position", "shaped", "coords"), &TextServer::shaped_text_hit_test_position);
 
+	ClassDB::bind_method(D_METHOD("shaped_text_get_grapheme_bounds", "shaped", "pos"), &TextServer::shaped_text_get_grapheme_bounds);
 	ClassDB::bind_method(D_METHOD("shaped_text_next_grapheme_pos", "shaped", "pos"), &TextServer::shaped_text_next_grapheme_pos);
 	ClassDB::bind_method(D_METHOD("shaped_text_prev_grapheme_pos", "shaped", "pos"), &TextServer::shaped_text_prev_grapheme_pos);
 
@@ -406,6 +419,11 @@ void TextServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("format_number", "number", "language"), &TextServer::format_number, DEFVAL(""));
 	ClassDB::bind_method(D_METHOD("parse_number", "number", "language"), &TextServer::parse_number, DEFVAL(""));
 	ClassDB::bind_method(D_METHOD("percent_sign", "language"), &TextServer::percent_sign, DEFVAL(""));
+
+	ClassDB::bind_method(D_METHOD("strip_diacritics", "string"), &TextServer::strip_diacritics);
+
+	ClassDB::bind_method(D_METHOD("string_to_upper", "string", "language"), &TextServer::string_to_upper, DEFVAL(""));
+	ClassDB::bind_method(D_METHOD("string_to_lower", "string", "language"), &TextServer::string_to_lower, DEFVAL(""));
 
 	/* Direction */
 	BIND_ENUM_CONSTANT(DIRECTION_AUTO);
@@ -465,6 +483,7 @@ void TextServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(FEATURE_BREAK_ITERATORS);
 	BIND_ENUM_CONSTANT(FEATURE_FONT_SYSTEM);
 	BIND_ENUM_CONSTANT(FEATURE_FONT_VARIABLE);
+	BIND_ENUM_CONSTANT(FEATURE_CONTEXT_SENSITIVE_CASE_CONVERSION);
 	BIND_ENUM_CONSTANT(FEATURE_USE_SUPPORT_DATA);
 
 	/* FT Contour Point Types */
@@ -472,117 +491,69 @@ void TextServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(CONTOUR_CURVE_TAG_OFF_CONIC);
 	BIND_ENUM_CONSTANT(CONTOUR_CURVE_TAG_OFF_CUBIC);
 
-	/* Font Spacing*/
+	/* Font Spacing */
 	BIND_ENUM_CONSTANT(SPACING_GLYPH);
 	BIND_ENUM_CONSTANT(SPACING_SPACE);
 	BIND_ENUM_CONSTANT(SPACING_TOP);
 	BIND_ENUM_CONSTANT(SPACING_BOTTOM);
-}
 
-Vector3 TextServer::hex_code_box_font_size[2] = { Vector3(5, 5, 1), Vector3(10, 10, 2) };
-Ref<CanvasTexture> TextServer::hex_code_box_font_tex[2] = { nullptr, nullptr };
-
-void TextServer::initialize_hex_code_box_fonts() {
-	static unsigned int tamsyn5x9_png_len = 175;
-	static unsigned char tamsyn5x9_png[] = {
-		0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
-		0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x05,
-		0x04, 0x03, 0x00, 0x00, 0x00, 0x20, 0x7c, 0x76, 0xda, 0x00, 0x00, 0x00,
-		0x0f, 0x50, 0x4c, 0x54, 0x45, 0xfd, 0x07, 0x00, 0x00, 0x00, 0x00, 0x06,
-		0x7e, 0x74, 0x00, 0x40, 0xc6, 0xff, 0xff, 0xff, 0x47, 0x9a, 0xd4, 0xc7,
-		0x00, 0x00, 0x00, 0x01, 0x74, 0x52, 0x4e, 0x53, 0x00, 0x40, 0xe6, 0xd8,
-		0x66, 0x00, 0x00, 0x00, 0x4e, 0x49, 0x44, 0x41, 0x54, 0x08, 0x1d, 0x05,
-		0xc1, 0x21, 0x01, 0x00, 0x00, 0x00, 0x83, 0x30, 0x04, 0xc1, 0x10, 0xef,
-		0x9f, 0xe9, 0x1b, 0x86, 0x2c, 0x17, 0xb9, 0xcc, 0x65, 0x0c, 0x73, 0x38,
-		0xc7, 0xe6, 0x22, 0x19, 0x88, 0x98, 0x10, 0x48, 0x4a, 0x29, 0x85, 0x14,
-		0x02, 0x89, 0x10, 0xa3, 0x1c, 0x0b, 0x31, 0xd6, 0xe6, 0x08, 0x69, 0x39,
-		0x48, 0x44, 0xa0, 0x0d, 0x4a, 0x22, 0xa1, 0x94, 0x42, 0x0a, 0x01, 0x63,
-		0x6d, 0x0e, 0x72, 0x18, 0x61, 0x8c, 0x74, 0x38, 0xc7, 0x26, 0x1c, 0xf3,
-		0x71, 0x16, 0x15, 0x27, 0x6a, 0xc2, 0x2f, 0x00, 0x00, 0x00, 0x00, 0x49,
-		0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
-	};
-
-	static unsigned int tamsyn10x20_png_len = 270;
-	static unsigned char tamsyn10x20_png[] = {
-		0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
-		0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0xa0, 0x00, 0x00, 0x00, 0x0a,
-		0x04, 0x03, 0x00, 0x00, 0x00, 0xc1, 0x66, 0x48, 0x96, 0x00, 0x00, 0x00,
-		0x0f, 0x50, 0x4c, 0x54, 0x45, 0x00, 0x00, 0x00, 0xf9, 0x07, 0x00, 0x5d,
-		0x71, 0xa5, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x49, 0xdb, 0xcb, 0x7f,
-		0x00, 0x00, 0x00, 0x01, 0x74, 0x52, 0x4e, 0x53, 0x00, 0x40, 0xe6, 0xd8,
-		0x66, 0x00, 0x00, 0x00, 0xad, 0x49, 0x44, 0x41, 0x54, 0x28, 0xcf, 0xa5,
-		0x92, 0x4b, 0x0e, 0x03, 0x31, 0x08, 0x43, 0xdf, 0x82, 0x83, 0x79, 0xe1,
-		0xfb, 0x9f, 0xa9, 0x0b, 0x3e, 0x61, 0xa6, 0x1f, 0x55, 0xad, 0x14, 0x31,
-		0x66, 0x42, 0x1c, 0x70, 0x0c, 0xb6, 0x00, 0x01, 0xb6, 0x08, 0xdb, 0x00,
-		0x8d, 0xc2, 0x14, 0xb2, 0x55, 0xa1, 0xfe, 0x09, 0xc2, 0x26, 0xdc, 0x25,
-		0x75, 0x22, 0x97, 0x1a, 0x25, 0x77, 0x28, 0x31, 0x02, 0x80, 0xc8, 0xdd,
-		0x2c, 0x11, 0x1a, 0x54, 0x9f, 0xc8, 0xa2, 0x8a, 0x06, 0xa9, 0x93, 0x22,
-		0xbd, 0xd4, 0xd0, 0x0c, 0xcf, 0x81, 0x2b, 0xca, 0xbb, 0x83, 0xe0, 0x10,
-		0xe6, 0xad, 0xff, 0x10, 0x2a, 0x66, 0x34, 0x41, 0x58, 0x35, 0x54, 0x49,
-		0x5a, 0x63, 0xa5, 0xc2, 0x87, 0xab, 0x52, 0x76, 0x9a, 0xba, 0xc6, 0xf4,
-		0x75, 0x7a, 0x9e, 0x3c, 0x46, 0x86, 0x5c, 0xa3, 0xfd, 0x87, 0x0e, 0x75,
-		0x08, 0x7b, 0xee, 0x7e, 0xea, 0x21, 0x5c, 0x4f, 0xf6, 0xc5, 0xc8, 0x4b,
-		0xb9, 0x11, 0xf2, 0xd6, 0xe1, 0x8f, 0x84, 0x62, 0x7b, 0x67, 0xf9, 0x24,
-		0xde, 0x6d, 0xbc, 0xb2, 0xcd, 0xb1, 0xf3, 0xf2, 0x2f, 0xe8, 0xe2, 0xe4,
-		0xae, 0x4b, 0x4f, 0xcf, 0x2b, 0xdc, 0x8d, 0x0d, 0xf0, 0x00, 0x8f, 0x22,
-		0x26, 0x65, 0x75, 0x8a, 0xe6, 0x84, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
-		0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
-	};
-
-	if (RenderingServer::get_singleton() != nullptr) {
-		Vector<uint8_t> hex_box_data;
-
-		Ref<Image> image;
-		image.instantiate();
-
-		Ref<ImageTexture> hex_code_image_tex[2];
-
-		hex_box_data.resize(tamsyn5x9_png_len);
-		memcpy(hex_box_data.ptrw(), tamsyn5x9_png, tamsyn5x9_png_len);
-		image->load_png_from_buffer(hex_box_data);
-		hex_code_image_tex[0].instantiate();
-		hex_code_image_tex[0]->create_from_image(image);
-		hex_code_box_font_tex[0].instantiate();
-		hex_code_box_font_tex[0]->set_diffuse_texture(hex_code_image_tex[0]);
-		hex_code_box_font_tex[0]->set_texture_filter(CanvasItem::TEXTURE_FILTER_NEAREST);
-		hex_box_data.clear();
-
-		hex_box_data.resize(tamsyn10x20_png_len);
-		memcpy(hex_box_data.ptrw(), tamsyn10x20_png, tamsyn10x20_png_len);
-		image->load_png_from_buffer(hex_box_data);
-		hex_code_image_tex[1].instantiate();
-		hex_code_image_tex[1]->create_from_image(image);
-		hex_code_box_font_tex[1].instantiate();
-		hex_code_box_font_tex[1]->set_diffuse_texture(hex_code_image_tex[1]);
-		hex_code_box_font_tex[1]->set_texture_filter(CanvasItem::TEXTURE_FILTER_NEAREST);
-		hex_box_data.clear();
-	}
-}
-
-void TextServer::finish_hex_code_box_fonts() {
-	if (hex_code_box_font_tex[0].is_valid()) {
-		hex_code_box_font_tex[0].unref();
-	}
-	if (hex_code_box_font_tex[1].is_valid()) {
-		hex_code_box_font_tex[1].unref();
-	}
+	/* Font Style */
+	BIND_ENUM_CONSTANT(FONT_BOLD);
+	BIND_ENUM_CONSTANT(FONT_ITALIC);
+	BIND_ENUM_CONSTANT(FONT_FIXED_WIDTH);
 }
 
 Vector2 TextServer::get_hex_code_box_size(int p_size, char32_t p_index) const {
-	int fnt = (p_size < 20) ? 0 : 1;
+	int w = ((p_index <= 0xFF) ? 1 : ((p_index <= 0xFFFF) ? 2 : 3));
+	int sp = MAX(0, w - 1);
+	int sz = MAX(1, Math::round(p_size / 15.f));
 
-	real_t w = ((p_index <= 0xFF) ? 1 : ((p_index <= 0xFFFF) ? 2 : 3)) * hex_code_box_font_size[fnt].x;
-	real_t h = 2 * hex_code_box_font_size[fnt].y;
-	return Vector2(w + 4, h + 3 + 2 * hex_code_box_font_size[fnt].z);
+	return Vector2(4 + 3 * w + sp + 1, 15) * sz;
+}
+
+void TextServer::_draw_hex_code_box_number(RID p_canvas, int p_size, const Vector2 &p_pos, uint8_t p_index, const Color &p_color) const {
+	static uint8_t chars[] = { 0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B, 0x5F, 0x70, 0x7F, 0x7B, 0x77, 0x1F, 0x4E, 0x3D, 0x4F, 0x47, 0x00 };
+	uint8_t x = chars[p_index];
+	if (x & (1 << 6)) {
+		RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(p_pos, Size2(3, 1) * p_size), p_color);
+	}
+	if (x & (1 << 5)) {
+		RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(p_pos + Point2(2, 0) * p_size, Size2(1, 3) * p_size), p_color);
+	}
+	if (x & (1 << 4)) {
+		RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(p_pos + Point2(2, 2) * p_size, Size2(1, 3) * p_size), p_color);
+	}
+	if (x & (1 << 3)) {
+		RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(p_pos + Point2(0, 4) * p_size, Size2(3, 1) * p_size), p_color);
+	}
+	if (x & (1 << 2)) {
+		RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(p_pos + Point2(0, 2) * p_size, Size2(1, 3) * p_size), p_color);
+	}
+	if (x & (1 << 1)) {
+		RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(p_pos, Size2(1, 3) * p_size), p_color);
+	}
+	if (x & (1 << 0)) {
+		RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(p_pos + Point2(0, 2) * p_size, Size2(3, 1) * p_size), p_color);
+	}
 }
 
 void TextServer::draw_hex_code_box(RID p_canvas, int p_size, const Vector2 &p_pos, char32_t p_index, const Color &p_color) const {
-	int fnt = (p_size < 20) ? 0 : 1;
-
-	ERR_FAIL_COND(hex_code_box_font_tex[fnt].is_null());
 	if (p_index == 0) {
 		return;
 	}
+
+	int w = ((p_index <= 0xFF) ? 1 : ((p_index <= 0xFFFF) ? 2 : 3));
+	int sp = MAX(0, w - 1);
+	int sz = MAX(1, Math::round(p_size / 15.f));
+
+	Size2 size = Vector2(4 + 3 * w + sp, 15) * sz;
+	Point2 pos = p_pos - Point2i(0, size.y * 0.85);
+
+	// Draw frame.
+	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(0, 0), Size2(sz, size.y)), p_color);
+	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(size.x - sz, 0), Size2(sz, size.y)), p_color);
+	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(0, 0), Size2(size.x, sz)), p_color);
+	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(0, size.y - sz), Size2(size.x, sz)), p_color);
 
 	uint8_t a = p_index & 0x0F;
 	uint8_t b = (p_index >> 4) & 0x0F;
@@ -591,47 +562,22 @@ void TextServer::draw_hex_code_box(RID p_canvas, int p_size, const Vector2 &p_po
 	uint8_t e = (p_index >> 16) & 0x0F;
 	uint8_t f = (p_index >> 20) & 0x0F;
 
-	Vector2 pos = p_pos;
-	Rect2 dest = Rect2(Vector2(), Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y));
-
-	real_t w = ((p_index <= 0xFF) ? 1 : ((p_index <= 0xFFFF) ? 2 : 3)) * hex_code_box_font_size[fnt].x;
-	real_t h = 2 * hex_code_box_font_size[fnt].y;
-
-	pos.y -= Math::floor((h + 3 + hex_code_box_font_size[fnt].z));
-
-	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(0, 0), Size2(1, h + 2 + 2 * hex_code_box_font_size[fnt].z)), p_color);
-	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(w + 2, 0), Size2(1, h + 2 + 2 * hex_code_box_font_size[fnt].z)), p_color);
-	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(0, 0), Size2(w + 3, 1)), p_color);
-	RenderingServer::get_singleton()->canvas_item_add_rect(p_canvas, Rect2(pos + Point2(0, h + 2 + 2 * hex_code_box_font_size[fnt].z), Size2(w + 3, 1)), p_color);
-
-	pos += Point2(2, 2);
+	// Draw hex code.
 	if (p_index <= 0xFF) {
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(0, 0);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(b * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(0, 1) + Point2(0, hex_code_box_font_size[fnt].z);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(a * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(2, 2) * sz, b, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(2, 8) * sz, a, p_color);
 	} else if (p_index <= 0xFFFF) {
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(0, 0);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(d * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(1, 0);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(c * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(0, 1) + Point2(0, hex_code_box_font_size[fnt].z);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(b * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(1, 1) + Point2(0, hex_code_box_font_size[fnt].z);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(a * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(2, 2) * sz, d, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(6, 2) * sz, c, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(2, 8) * sz, b, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(6, 8) * sz, a, p_color);
 	} else {
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(0, 0);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(f * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(1, 0);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(e * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(2, 0);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(d * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(0, 1) + Point2(0, hex_code_box_font_size[fnt].z);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(c * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(1, 1) + Point2(0, hex_code_box_font_size[fnt].z);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(b * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
-		dest.position = pos + Vector2(hex_code_box_font_size[fnt].x, hex_code_box_font_size[fnt].y) * Point2(2, 1) + Point2(0, hex_code_box_font_size[fnt].z);
-		RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas, dest, hex_code_box_font_tex[fnt]->get_rid(), Rect2(Point2(a * hex_code_box_font_size[fnt].x, 0), dest.size), p_color, false, false);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(2, 2) * sz, f, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(6, 2) * sz, e, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(10, 2) * sz, d, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(2, 8) * sz, c, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(6, 8) * sz, b, p_color);
+		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(10, 8) * sz, a, p_color);
 	}
 }
 
@@ -711,13 +657,13 @@ PackedInt32Array TextServer::shaped_text_get_line_breaks_adv(RID p_shaped, const
 	return lines;
 }
 
-PackedInt32Array TextServer::shaped_text_get_line_breaks(RID p_shaped, real_t p_width, int p_start, uint16_t /*TextBreakFlag*/ p_break_flags) const {
+PackedInt32Array TextServer::shaped_text_get_line_breaks(RID p_shaped, float p_width, int p_start, uint16_t /*TextBreakFlag*/ p_break_flags) const {
 	PackedInt32Array lines;
 
 	const_cast<TextServer *>(this)->shaped_text_update_breaks(p_shaped);
 	const Vector2i &range = shaped_text_get_range(p_shaped);
 
-	real_t width = 0.f;
+	float width = 0.f;
 	int line_start = MAX(p_start, range.x);
 	int last_safe_break = -1;
 	int word_count = 0;
@@ -1051,9 +997,9 @@ Vector<Vector2> TextServer::shaped_text_get_selection(RID p_shaped, int p_start,
 						}
 						real_t char_adv = advance / (real_t)(glyphs[i].end - glyphs[i].start);
 						if ((glyphs[i].flags & GRAPHEME_IS_RTL) == GRAPHEME_IS_RTL) {
-							ranges.push_back(Vector2(off, off + char_adv * (start - glyphs[i].start)));
+							ranges.push_back(Vector2(off, off + char_adv * (glyphs[i].end - start)));
 						} else {
-							ranges.push_back(Vector2(off + char_adv * (glyphs[i].end - start), off + advance));
+							ranges.push_back(Vector2(off + char_adv * (start - glyphs[i].start), off + advance));
 						}
 					}
 					// Selection range is within grapheme.
@@ -1086,7 +1032,7 @@ Vector<Vector2> TextServer::shaped_text_get_selection(RID p_shaped, int p_start,
 		while (j < ranges.size()) {
 			if (Math::is_equal_approx(ranges[i].y, ranges[j].x, (real_t)UNIT_EPSILON)) {
 				ranges.write[i].y = ranges[j].y;
-				ranges.remove(j);
+				ranges.remove_at(j);
 				continue;
 			}
 			j++;
@@ -1097,9 +1043,9 @@ Vector<Vector2> TextServer::shaped_text_get_selection(RID p_shaped, int p_start,
 	return ranges;
 }
 
-int TextServer::shaped_text_hit_test_grapheme(RID p_shaped, real_t p_coords) const {
+int TextServer::shaped_text_hit_test_grapheme(RID p_shaped, float p_coords) const {
 	// Exact grapheme hit test, return -1 if missed.
-	real_t off = 0.0f;
+	float off = 0.0f;
 
 	int v_size = shaped_text_get_glyph_count(p_shaped);
 	const Glyph *glyphs = shaped_text_get_glyphs(p_shaped);
@@ -1115,7 +1061,7 @@ int TextServer::shaped_text_hit_test_grapheme(RID p_shaped, real_t p_coords) con
 	return -1;
 }
 
-int TextServer::shaped_text_hit_test_position(RID p_shaped, real_t p_coords) const {
+int TextServer::shaped_text_hit_test_position(RID p_shaped, float p_coords) const {
 	int v_size = shaped_text_get_glyph_count(p_shaped);
 	const Glyph *glyphs = shaped_text_get_glyphs(p_shaped);
 
@@ -1161,6 +1107,31 @@ int TextServer::shaped_text_hit_test_position(RID p_shaped, real_t p_coords) con
 					return glyphs[i].start;
 				}
 			}
+			// Ligature, handle mid-grapheme hit.
+			if (p_coords >= off && p_coords < off + advance && glyphs[i].end > glyphs[i].start + 1) {
+				int cnt = glyphs[i].end - glyphs[i].start;
+				real_t char_adv = advance / (real_t)(cnt);
+				real_t sub_off = off;
+				for (int j = 0; j < cnt; j++) {
+					// Place caret to the left of clicked sub-grapheme.
+					if (p_coords >= sub_off && p_coords < sub_off + char_adv / 2) {
+						if ((glyphs[i].flags & GRAPHEME_IS_RTL) == GRAPHEME_IS_RTL) {
+							return glyphs[i].end - j;
+						} else {
+							return glyphs[i].start + j;
+						}
+					}
+					// Place caret to the right of clicked sub-grapheme.
+					if (p_coords >= sub_off + char_adv / 2 && p_coords < sub_off + char_adv) {
+						if ((glyphs[i].flags & GRAPHEME_IS_RTL) == GRAPHEME_IS_RTL) {
+							return glyphs[i].start + (cnt - 1) - j;
+						} else {
+							return glyphs[i].end - (cnt - 1) + j;
+						}
+					}
+					sub_off += char_adv;
+				}
+			}
 			// Place caret to the left of clicked grapheme.
 			if (p_coords >= off && p_coords < off + advance / 2) {
 				if ((glyphs[i].flags & GRAPHEME_IS_RTL) == GRAPHEME_IS_RTL) {
@@ -1181,6 +1152,27 @@ int TextServer::shaped_text_hit_test_position(RID p_shaped, real_t p_coords) con
 		off += glyphs[i].advance * glyphs[i].repeat;
 	}
 	return 0;
+}
+
+Vector2 TextServer::shaped_text_get_grapheme_bounds(RID p_shaped, int p_pos) const {
+	int v_size = shaped_text_get_glyph_count(p_shaped);
+	const Glyph *glyphs = shaped_text_get_glyphs(p_shaped);
+
+	real_t off = 0.0f;
+	for (int i = 0; i < v_size; i++) {
+		if ((glyphs[i].count > 0) && ((glyphs[i].index != 0) || ((glyphs[i].flags & GRAPHEME_IS_SPACE) == GRAPHEME_IS_SPACE))) {
+			if (glyphs[i].start <= p_pos && glyphs[i].end >= p_pos) {
+				real_t advance = 0.f;
+				for (int j = 0; j < glyphs[i].count; j++) {
+					advance += glyphs[i + j].advance;
+				}
+				return Vector2(off, off + advance);
+			}
+		}
+		off += glyphs[i].advance * glyphs[i].repeat;
+	}
+
+	return Vector2();
 }
 
 int TextServer::shaped_text_next_grapheme_pos(RID p_shaped, int p_pos) const {
@@ -1206,7 +1198,7 @@ int TextServer::shaped_text_prev_grapheme_pos(RID p_shaped, int p_pos) const {
 	return p_pos;
 }
 
-void TextServer::shaped_text_draw(RID p_shaped, RID p_canvas, const Vector2 &p_pos, real_t p_clip_l, real_t p_clip_r, const Color &p_color) const {
+void TextServer::shaped_text_draw(RID p_shaped, RID p_canvas, const Vector2 &p_pos, float p_clip_l, float p_clip_r, const Color &p_color) const {
 	TextServer::Orientation orientation = shaped_text_get_orientation(p_shaped);
 	bool hex_codes = shaped_text_get_preserve_control(p_shaped) || shaped_text_get_preserve_invalid(p_shaped);
 
@@ -1237,6 +1229,17 @@ void TextServer::shaped_text_draw(RID p_shaped, RID p_canvas, const Vector2 &p_p
 	}
 	// Draw at the baseline.
 	for (int i = 0; i < v_size; i++) {
+		if (trim_pos >= 0) {
+			if (rtl) {
+				if (i < trim_pos) {
+					continue;
+				}
+			} else {
+				if (i >= trim_pos) {
+					break;
+				}
+			}
+		}
 		for (int j = 0; j < glyphs[i].repeat; j++) {
 			if (p_clip_r > 0) {
 				// Clip right / bottom.
@@ -1261,17 +1264,6 @@ void TextServer::shaped_text_draw(RID p_shaped, RID p_canvas, const Vector2 &p_p
 					if (ofs.y - p_pos.y < p_clip_l) {
 						ofs.y += glyphs[i].advance;
 						continue;
-					}
-				}
-			}
-			if (trim_pos >= 0) {
-				if (rtl) {
-					if (i < trim_pos && (glyphs[j].flags & TextServer::GRAPHEME_IS_VIRTUAL) != TextServer::GRAPHEME_IS_VIRTUAL) {
-						continue;
-					}
-				} else {
-					if (i >= trim_pos && (glyphs[j].flags & TextServer::GRAPHEME_IS_VIRTUAL) != TextServer::GRAPHEME_IS_VIRTUAL) {
-						break;
 					}
 				}
 			}
@@ -1303,10 +1295,10 @@ void TextServer::shaped_text_draw(RID p_shaped, RID p_canvas, const Vector2 &p_p
 	}
 }
 
-void TextServer::shaped_text_draw_outline(RID p_shaped, RID p_canvas, const Vector2 &p_pos, real_t p_clip_l, real_t p_clip_r, int p_outline_size, const Color &p_color) const {
+void TextServer::shaped_text_draw_outline(RID p_shaped, RID p_canvas, const Vector2 &p_pos, float p_clip_l, float p_clip_r, int p_outline_size, const Color &p_color) const {
 	TextServer::Orientation orientation = shaped_text_get_orientation(p_shaped);
 
-	bool rtl = (shaped_text_get_direction(p_shaped) == DIRECTION_RTL);
+	bool rtl = (shaped_text_get_inferred_direction(p_shaped) == DIRECTION_RTL);
 
 	int ellipsis_pos = shaped_text_get_ellipsis_pos(p_shaped);
 	int trim_pos = shaped_text_get_trim_pos(p_shaped);
@@ -1332,6 +1324,17 @@ void TextServer::shaped_text_draw_outline(RID p_shaped, RID p_canvas, const Vect
 	}
 	// Draw at the baseline.
 	for (int i = 0; i < v_size; i++) {
+		if (trim_pos >= 0) {
+			if (rtl) {
+				if (i < trim_pos) {
+					continue;
+				}
+			} else {
+				if (i >= trim_pos) {
+					break;
+				}
+			}
+		}
 		for (int j = 0; j < glyphs[i].repeat; j++) {
 			if (p_clip_r > 0) {
 				// Clip right / bottom.
@@ -1359,17 +1362,6 @@ void TextServer::shaped_text_draw_outline(RID p_shaped, RID p_canvas, const Vect
 					}
 				}
 			}
-			if (trim_pos >= 0) {
-				if (rtl) {
-					if (i < trim_pos) {
-						continue;
-					}
-				} else {
-					if (i >= trim_pos && (glyphs[j].flags & TextServer::GRAPHEME_IS_VIRTUAL) != TextServer::GRAPHEME_IS_VIRTUAL) {
-						break;
-					}
-				}
-			}
 			if (glyphs[i].font_rid != RID()) {
 				font_draw_glyph_outline(glyphs[i].font_rid, p_canvas, glyphs[i].font_size, p_outline_size, ofs + Vector2(glyphs[i].x_off, glyphs[i].y_off), glyphs[i].index, p_color);
 			}
@@ -1393,6 +1385,134 @@ void TextServer::shaped_text_draw_outline(RID p_shaped, RID p_canvas, const Vect
 			}
 		}
 	}
+}
+
+void TextServer::_diacritics_map_add(const String &p_from, char32_t p_to) {
+	for (int i = 0; i < p_from.size(); i++) {
+		diacritics_map[p_from[i]] = p_to;
+	}
+}
+
+void TextServer::_init_diacritics_map() {
+	diacritics_map.clear();
+
+	// Latin.
+	_diacritics_map_add(U"ÀÁÂÃÄÅĀĂĄǍǞǠǺȀȂȦḀẠẢẤẦẨẪẬẮẰẲẴẶ", U'A');
+	_diacritics_map_add(U"àáâãäåāăąǎǟǡǻȁȃȧḁẚạảấầẩẫậắằẳẵặ", U'a');
+	_diacritics_map_add(U"ǢǼ", U'Æ');
+	_diacritics_map_add(U"ǣǽ", U'æ');
+	_diacritics_map_add(U"ḂḄḆ", U'B');
+	_diacritics_map_add(U"ḃḅḇ", U'b');
+	_diacritics_map_add(U"ÇĆĈĊČḈ", U'C');
+	_diacritics_map_add(U"çćĉċčḉ", U'c');
+	_diacritics_map_add(U"ĎḊḌḎḐḒ", U'D');
+	_diacritics_map_add(U"ďḋḍḏḑḓ", U'd');
+	_diacritics_map_add(U"ÈÉÊËĒĔĖĘĚȆȨḔḖḘḚḜẸẺẼẾỀỂỄỆ", U'E');
+	_diacritics_map_add(U"èéêëēĕėęěȇȩḕḗḙḛḝẹẻẽếềểễệ", U'e');
+	_diacritics_map_add(U"Ḟ", U'F');
+	_diacritics_map_add(U"ḟ", U'f');
+	_diacritics_map_add(U"ĜĞĠĢǦǴḠ", U'G');
+	_diacritics_map_add(U"ĝğġģǧǵḡ", U'g');
+	_diacritics_map_add(U"ĤȞḢḤḦḨḪ", U'H');
+	_diacritics_map_add(U"ĥȟḣḥḧḩḫẖ", U'h');
+	_diacritics_map_add(U"ÌÍÎÏĨĪĬĮİǏȈȊḬḮỈỊ", U'I');
+	_diacritics_map_add(U"ìíîïĩīĭįıǐȉȋḭḯỉị", U'i');
+	_diacritics_map_add(U"Ĵ", U'J');
+	_diacritics_map_add(U"ĵ", U'j');
+	_diacritics_map_add(U"ĶǨḰḲḴ", U'K');
+	_diacritics_map_add(U"ķĸǩḱḳḵ", U'k');
+	_diacritics_map_add(U"ĹĻĽĿḶḸḺḼ", U'L');
+	_diacritics_map_add(U"ĺļľŀḷḹḻḽ", U'l');
+	_diacritics_map_add(U"ḾṀṂ", U'M');
+	_diacritics_map_add(U"ḿṁṃ", U'm');
+	_diacritics_map_add(U"ÑŃŅŇǸṄṆṈṊ", U'N');
+	_diacritics_map_add(U"ñńņňŉǹṅṇṉṋ", U'n');
+	_diacritics_map_add(U"ÒÓÔÕÖŌŎŐƠǑǪǬȌȎȪȬȮȰṌṎṐṒỌỎỐỒỔỖỘỚỜỞỠỢ", U'O');
+	_diacritics_map_add(U"òóôõöōŏőơǒǫǭȍȏȫȭȯȱṍṏṑṓọỏốồổỗộớờởỡợ", U'o');
+	_diacritics_map_add(U"ṔṖ", U'P');
+	_diacritics_map_add(U"ṗṕ", U'p');
+	_diacritics_map_add(U"ŔŖŘȐȒṘṚṜṞ", U'R');
+	_diacritics_map_add(U"ŕŗřȑȓṙṛṝṟ", U'r');
+	_diacritics_map_add(U"ŚŜŞŠȘṠṢṤṦṨ", U'S');
+	_diacritics_map_add(U"śŝşšſșṡṣṥṧṩẛẜẝ", U's');
+	_diacritics_map_add(U"ŢŤȚṪṬṮṰ", U'T');
+	_diacritics_map_add(U"ţťțṫṭṯṱẗ", U't');
+	_diacritics_map_add(U"ÙÚÛÜŨŪŬŮŰŲƯǓǕǗǙǛȔȖṲṴṶṸṺỤỦỨỪỬỮỰ", U'U');
+	_diacritics_map_add(U"ùúûüũūŭůűųưǔǖǘǚǜȕȗṳṵṷṹṻụủứừửữự", U'u');
+	_diacritics_map_add(U"ṼṾ", U'V');
+	_diacritics_map_add(U"ṽṿ", U'v');
+	_diacritics_map_add(U"ŴẀẂẄẆẈ", U'W');
+	_diacritics_map_add(U"ŵẁẃẅẇẉẘ", U'w');
+	_diacritics_map_add(U"ẊẌ", U'X');
+	_diacritics_map_add(U"ẋẍ", U'x');
+	_diacritics_map_add(U"ÝŶẎỲỴỶỸỾ", U'Y');
+	_diacritics_map_add(U"ýÿŷẏẙỳỵỷỹỿ", U'y');
+	_diacritics_map_add(U"ŹŻŽẐẒẔ", U'Z');
+	_diacritics_map_add(U"źżžẑẓẕ", U'z');
+
+	// Greek.
+	_diacritics_map_add(U"ΆἈἉἊἋἌἍἎἏᾈᾉᾊᾋᾌᾍᾎᾏᾸᾹᾺΆᾼ", U'Α');
+	_diacritics_map_add(U"άἀἁἂἃἄἅἆἇὰάᾀᾁᾂᾃᾄᾅᾆᾇᾰᾱᾲᾳᾴᾶᾷ", U'α');
+	_diacritics_map_add(U"ΈἘἙἚἛἜἝῈΈ", U'Ε');
+	_diacritics_map_add(U"έἐἑἒἓἔἕὲέ", U'ε');
+	_diacritics_map_add(U"ΉἨἩἪἫἬἭἮἯᾘᾙᾚᾛᾜᾝᾞᾟῊΉῌ", U'Η');
+	_diacritics_map_add(U"ήἠἡἢἣἤἥἦἧὴήᾐᾑᾒᾓᾔᾕᾖᾗῂῃῄῆῇ", U'η');
+	_diacritics_map_add(U"ΊΪἸἹἺἻἼἽἾἿῘῙῚΊ", U'Ι');
+	_diacritics_map_add(U"ίΐϊἰἱἲἳἴἵἶἷὶίῐῑῒΐῖῗ", U'ι');
+	_diacritics_map_add(U"ΌὈὉὊὋὌὍῸΌ", U'Ο');
+	_diacritics_map_add(U"όὀὁὂὃὄὅὸό", U'ο');
+	_diacritics_map_add(U"Ῥ", U'Ρ');
+	_diacritics_map_add(U"ῤῥ", U'ρ');
+	_diacritics_map_add(U"ΎΫϓϔὙὛὝὟῨῩῪΎ", U'Υ');
+	_diacritics_map_add(U"ΰϋύὐὑὒὓὔὕὖὗὺύῠῡῢΰῦῧ", U'υ');
+	_diacritics_map_add(U"ΏὨὩὪὫὬὭὮὯᾨᾩᾪᾫᾬᾭᾮᾯῺΏῼ", U'Ω');
+	_diacritics_map_add(U"ώὠὡὢὣὤὥὦὧὼώᾠᾡᾢᾣᾤᾥᾦᾧῲῳῴῶῷ", U'ω');
+
+	// Cyrillic.
+	_diacritics_map_add(U"ӐӒ", U'А');
+	_diacritics_map_add(U"ӑӓ", U'а');
+	_diacritics_map_add(U"ЀЁӖ", U'Е');
+	_diacritics_map_add(U"ѐёӗ", U'е');
+	_diacritics_map_add(U"Ӛ", U'Ә');
+	_diacritics_map_add(U"ӛ", U'ә');
+	_diacritics_map_add(U"Ӝ", U'Ж');
+	_diacritics_map_add(U"ӝ", U'ж');
+	_diacritics_map_add(U"Ӟ", U'З');
+	_diacritics_map_add(U"ӟ", U'з');
+	_diacritics_map_add(U"Ѓ", U'Г');
+	_diacritics_map_add(U"ѓ", U'г');
+	_diacritics_map_add(U"Ї", U'І');
+	_diacritics_map_add(U"ї", U'і');
+	_diacritics_map_add(U"ЍӢӤЙ", U'И');
+	_diacritics_map_add(U"ѝӣӥй", U'и');
+	_diacritics_map_add(U"Ќ", U'К');
+	_diacritics_map_add(U"ќ", U'к');
+	_diacritics_map_add(U"Ӧ", U'О');
+	_diacritics_map_add(U"ӧ", U'о');
+	_diacritics_map_add(U"Ӫ", U'Ө');
+	_diacritics_map_add(U"ӫ", U'ө');
+	_diacritics_map_add(U"Ӭ", U'Э');
+	_diacritics_map_add(U"ӭ", U'э');
+	_diacritics_map_add(U"ЎӮӰӲ", U'У');
+	_diacritics_map_add(U"ўӯӱӳ", U'у');
+	_diacritics_map_add(U"Ӵ", U'Ч');
+	_diacritics_map_add(U"ӵ", U'ч');
+	_diacritics_map_add(U"Ӹ", U'Ы');
+	_diacritics_map_add(U"ӹ", U'ы');
+}
+
+String TextServer::strip_diacritics(const String &p_string) const {
+	String result;
+	for (int i = 0; i < p_string.length(); i++) {
+		if (p_string[i] < 0x02B0 || p_string[i] > 0x036F) { // Skip combining diacritics.
+			if (diacritics_map.has(p_string[i])) {
+				result += diacritics_map[p_string[i]];
+			} else {
+				result += p_string[i];
+			}
+		}
+	}
+	return result;
 }
 
 Array TextServer::_shaped_text_get_glyphs_wrapper(RID p_shaped) const {
@@ -1471,6 +1591,7 @@ Array TextServer::_shaped_text_get_ellipsis_glyphs_wrapper(RID p_shaped) const {
 }
 
 TextServer::TextServer() {
+	_init_diacritics_map();
 }
 
 TextServer::~TextServer() {

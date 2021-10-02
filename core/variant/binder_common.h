@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -80,14 +80,18 @@ struct VariantCaster<const T &> {
 		}                                                                    \
 		typedef int64_t EncodeT;                                             \
 		_FORCE_INLINE_ static void encode(m_enum p_val, const void *p_ptr) { \
-			*(int64_t *)p_ptr = p_val;                                       \
+			*(int64_t *)p_ptr = (int64_t)p_val;                              \
 		}                                                                    \
 	};
 
 // Object enum casts must go here
 VARIANT_ENUM_CAST(Object::ConnectFlags);
 
+VARIANT_ENUM_CAST(Vector2::Axis);
+VARIANT_ENUM_CAST(Vector2i::Axis);
 VARIANT_ENUM_CAST(Vector3::Axis);
+VARIANT_ENUM_CAST(Vector3i::Axis);
+VARIANT_ENUM_CAST(Basis::EulerOrder);
 
 VARIANT_ENUM_CAST(Error);
 VARIANT_ENUM_CAST(Side);
@@ -102,9 +106,9 @@ VARIANT_ENUM_CAST(KeyModifierMask);
 VARIANT_ENUM_CAST(MIDIMessage);
 VARIANT_ENUM_CAST(MouseButton);
 VARIANT_ENUM_CAST(Orientation);
-VARIANT_ENUM_CAST(HAlign);
-VARIANT_ENUM_CAST(VAlign);
-VARIANT_ENUM_CAST(InlineAlign);
+VARIANT_ENUM_CAST(HorizontalAlignment);
+VARIANT_ENUM_CAST(VerticalAlignment);
+VARIANT_ENUM_CAST(InlineAlignment);
 VARIANT_ENUM_CAST(PropertyHint);
 VARIANT_ENUM_CAST(PropertyUsageFlags);
 VARIANT_ENUM_CAST(Variant::Type);
@@ -563,12 +567,10 @@ void call_with_validated_variant_args_static_method_ret(R (*p_method)(P...), con
 
 // GCC raises "parameter 'p_args' set but not used" when P = {},
 // it's not clever enough to treat other P values as making this branch valid.
-#if defined(DEBUG_METHODS_ENABLED) && defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
 #endif
-
-#ifdef DEBUG_METHODS_ENABLED
 
 template <class Q>
 void call_get_argument_type_helper(int p_arg, int &index, Variant::Type &type) {
@@ -608,6 +610,7 @@ void call_get_argument_type_info(int p_arg, PropertyInfo &info) {
 	(void)index; // Suppress GCC warning.
 }
 
+#ifdef DEBUG_METHODS_ENABLED
 template <class Q>
 void call_get_argument_metadata_helper(int p_arg, int &index, GodotTypeInfo::Metadata &md) {
 	if (p_arg == index) {
@@ -627,13 +630,6 @@ GodotTypeInfo::Metadata call_get_argument_metadata(int p_arg) {
 	(void)a; // Suppress (valid, but unavoidable) -Wunused-variable warning.
 	(void)index;
 	return md;
-}
-
-#else
-
-template <class... P>
-Variant::Type call_get_argument_type(int p_arg) {
-	return Variant::NIL;
 }
 
 #endif // DEBUG_METHODS_ENABLED
@@ -915,7 +911,7 @@ void call_with_variant_args_static_dv(void (*p_method)(P...), const Variant **p_
 	call_with_variant_args_static(p_method, args, r_error, BuildIndexSequence<sizeof...(P)>{});
 }
 
-#if defined(DEBUG_METHODS_ENABLED) && defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -35,7 +35,9 @@
 #include "core/object/method_bind.h"
 #include "core/os/os.h"
 
-const char *NativeExtension::EXTENSION_LIST_CONFIG_FILE = "res://.godot/extension_list.cfg";
+String NativeExtension::get_extension_list_config_file() {
+	return ProjectSettings::get_singleton()->get_project_data_path().plus_file("extension_list.cfg");
+}
 
 class NativeExtensionMethodBind : public MethodBind {
 	GDNativeExtensionClassMethodCall call_func;
@@ -154,7 +156,6 @@ void NativeExtension::_register_extension_class(const GDNativeExtensionClassLibr
 	extension->native_extension.unreference = p_extension_funcs->unreference_func;
 	extension->native_extension.class_userdata = p_extension_funcs->class_userdata;
 	extension->native_extension.create_instance = p_extension_funcs->create_instance_func;
-	extension->native_extension.set_object_instance = p_extension_funcs->object_instance_func;
 	extension->native_extension.free_instance = p_extension_funcs->free_instance_func;
 	extension->native_extension.get_virtual = p_extension_funcs->get_virtual_func;
 
@@ -396,7 +397,7 @@ RES NativeExtensionResourceLoader::load(const String &p_path, const String &p_or
 		}
 	}
 
-	if (library_path == String()) {
+	if (library_path.is_empty()) {
 		if (r_error) {
 			*r_error = ERR_FILE_NOT_FOUND;
 		}

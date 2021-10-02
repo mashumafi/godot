@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -74,6 +74,8 @@ void Joint2D::_update_joint(bool p_only_free) {
 	PhysicsBody2D *body_a = Object::cast_to<PhysicsBody2D>(node_a);
 	PhysicsBody2D *body_b = Object::cast_to<PhysicsBody2D>(node_b);
 
+	bool valid = false;
+
 	if (node_a && !body_a && node_b && !body_b) {
 		warning = TTR("Node A and Node B must be PhysicsBody2Ds");
 	} else if (node_a && !body_a) {
@@ -86,11 +88,12 @@ void Joint2D::_update_joint(bool p_only_free) {
 		warning = TTR("Node A and Node B must be different PhysicsBody2Ds");
 	} else {
 		warning = String();
+		valid = true;
 	}
 
 	update_configuration_warnings();
 
-	if (!warning.is_empty()) {
+	if (!valid) {
 		PhysicsServer2D::get_singleton()->joint_clear(joint);
 		return;
 	}

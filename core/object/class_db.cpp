@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -36,8 +36,6 @@
 
 #define OBJTYPE_RLOCK RWLockRead _rw_lockr_(lock);
 #define OBJTYPE_WLOCK RWLockWrite _rw_lockw_(lock);
-
-#ifdef DEBUG_METHODS_ENABLED
 
 MethodDefinition D_METHOD(const char *p_name) {
 	MethodDefinition md;
@@ -225,8 +223,6 @@ MethodDefinition D_METHOD(const char *p_name, const char *p_arg1, const char *p_
 	md.args.write[12] = StaticCString::create(p_arg13);
 	return md;
 }
-
-#endif
 
 ClassDB::APIType ClassDB::current_api = API_CORE;
 
@@ -501,22 +497,6 @@ void ClassDB::add_compatibility_class(const StringName &p_class, const StringNam
 	compat_classes[p_class] = p_fallback;
 }
 
-thread_local bool initializing_with_extension = false;
-thread_local ObjectNativeExtension *initializing_extension = nullptr;
-thread_local GDExtensionClassInstancePtr initializing_extension_instance = nullptr;
-
-void ClassDB::instance_get_native_extension_data(ObjectNativeExtension **r_extension, GDExtensionClassInstancePtr *r_extension_instance, Object *p_base) {
-	if (initializing_with_extension) {
-		*r_extension = initializing_extension;
-		*r_extension_instance = initializing_extension_instance;
-		initializing_with_extension = false;
-		initializing_extension->set_object_instance(*r_extension_instance, p_base);
-	} else {
-		*r_extension = nullptr;
-		*r_extension_instance = nullptr;
-	}
-}
-
 Object *ClassDB::instantiate(const StringName &p_class) {
 	ClassInfo *ti;
 	{
@@ -529,7 +509,7 @@ Object *ClassDB::instantiate(const StringName &p_class) {
 		}
 		ERR_FAIL_COND_V_MSG(!ti, nullptr, "Cannot get class '" + String(p_class) + "'.");
 		ERR_FAIL_COND_V_MSG(ti->disabled, nullptr, "Class '" + String(p_class) + "' is disabled.");
-		ERR_FAIL_COND_V(!ti->creation_func, nullptr);
+		ERR_FAIL_COND_V_MSG(!ti->creation_func, nullptr, "Class '" + String(p_class) + "' or its base class cannot be instantiated.");
 	}
 #ifdef TOOLS_ENABLED
 	if (ti->api == API_EDITOR && !Engine::get_singleton()->is_editor_hint()) {
@@ -537,21 +517,31 @@ Object *ClassDB::instantiate(const StringName &p_class) {
 		return nullptr;
 	}
 #endif
-	if (ti->native_extension) {
-		initializing_with_extension = true;
-		initializing_extension = ti->native_extension;
-		initializing_extension_instance = ti->native_extension->create_instance(ti->native_extension->class_userdata);
+	if (ti->native_extension && ti->native_extension->create_instance) {
+		return (Object *)ti->native_extension->create_instance(ti->native_extension->class_userdata);
+	} else {
+		return ti->creation_func();
 	}
-	return ti->creation_func();
 }
 
-Object *ClassDB::construct_object(Object *(*p_create_func)(), ObjectNativeExtension *p_extension) {
-	if (p_extension) {
-		initializing_with_extension = true;
-		initializing_extension = p_extension;
-		initializing_extension_instance = p_extension->create_instance(p_extension->class_userdata);
+void ClassDB::set_object_extension_instance(Object *p_object, const StringName &p_class, GDExtensionClassInstancePtr p_instance) {
+	ERR_FAIL_COND(!p_object);
+	ClassInfo *ti;
+	{
+		OBJTYPE_RLOCK;
+		ti = classes.getptr(p_class);
+		if (!ti || ti->disabled || !ti->creation_func || (ti->native_extension && !ti->native_extension->create_instance)) {
+			if (compat_classes.has(p_class)) {
+				ti = classes.getptr(compat_classes[p_class]);
+			}
+		}
+		ERR_FAIL_COND_MSG(!ti, "Cannot get class '" + String(p_class) + "'.");
+		ERR_FAIL_COND_MSG(ti->disabled, "Class '" + String(p_class) + "' is disabled.");
+		ERR_FAIL_COND_MSG(!ti->native_extension, "Class '" + String(p_class) + "' has no native extension.");
 	}
-	return p_create_func();
+
+	p_object->_extension = ti->native_extension;
+	p_object->_extension_instance = p_instance;
 }
 
 bool ClassDB::can_instantiate(const StringName &p_class) {
@@ -589,7 +579,6 @@ void ClassDB::_add_class2(const StringName &p_class, const StringName &p_inherit
 	}
 }
 
-#ifdef DEBUG_METHODS_ENABLED
 static MethodInfo info_from_bind(MethodBind *p_method) {
 	MethodInfo minfo;
 	minfo.name = p_method->get_name();
@@ -610,7 +599,6 @@ static MethodInfo info_from_bind(MethodBind *p_method) {
 
 	return minfo;
 }
-#endif
 
 void ClassDB::get_method_list(const StringName &p_class, List<MethodInfo> *p_methods, bool p_no_inheritance, bool p_exclude_from_properties) {
 	OBJTYPE_RLOCK;
@@ -650,9 +638,8 @@ void ClassDB::get_method_list(const StringName &p_class, List<MethodInfo> *p_met
 
 		while ((K = type->method_map.next(K))) {
 			MethodBind *m = type->method_map[*K];
-			MethodInfo mi;
-			mi.name = m->get_name();
-			p_methods->push_back(mi);
+			MethodInfo minfo = info_from_bind(m);
+			p_methods->push_back(minfo);
 		}
 
 #endif
@@ -698,9 +685,8 @@ bool ClassDB::get_method_info(const StringName &p_class, const StringName &p_met
 		if (type->method_map.has(p_method)) {
 			if (r_info) {
 				MethodBind *m = type->method_map[p_method];
-				MethodInfo mi;
-				mi.name = m->get_name();
-				*r_info = mi;
+				MethodInfo minfo = info_from_bind(m);
+				*r_info = minfo;
 			}
 			return true;
 		}
@@ -745,7 +731,7 @@ void ClassDB::bind_integer_constant(const StringName &p_class, const StringName 
 	type->constant_map[p_name] = p_constant;
 
 	String enum_name = p_enum;
-	if (enum_name != String()) {
+	if (!enum_name.is_empty()) {
 		if (enum_name.find(".") != -1) {
 			enum_name = enum_name.get_slicec('.', 1);
 		}
@@ -1411,13 +1397,8 @@ void ClassDB::bind_method_custom(const StringName &p_class, MethodBind *p_method
 	type->method_map[p_method->get_name()] = p_method;
 }
 
-#ifdef DEBUG_METHODS_ENABLED
 MethodBind *ClassDB::bind_methodfi(uint32_t p_flags, MethodBind *p_bind, const MethodDefinition &method_name, const Variant **p_defs, int p_defcount) {
 	StringName mdname = method_name.name;
-#else
-MethodBind *ClassDB::bind_methodfi(uint32_t p_flags, MethodBind *p_bind, const char *method_name, const Variant **p_defs, int p_defcount) {
-	StringName mdname = StaticCString::create(method_name);
-#endif
 
 	OBJTYPE_WLOCK;
 	ERR_FAIL_COND_V(!p_bind, nullptr);

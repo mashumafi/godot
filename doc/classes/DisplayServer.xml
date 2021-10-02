@@ -10,18 +10,35 @@
 		<method name="clipboard_get" qualifiers="const">
 			<return type="String" />
 			<description>
+				Returns the user's clipboard as a string if possible.
+			</description>
+		</method>
+		<method name="clipboard_get_primary" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the user's primary clipboard as a string if possible.
+				[b]Note:[/b] This method is only implemented on Linux.
+			</description>
+		</method>
+		<method name="clipboard_has" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if there is content on the user's clipboard.
 			</description>
 		</method>
 		<method name="clipboard_set">
 			<return type="void" />
 			<argument index="0" name="clipboard" type="String" />
 			<description>
+				Sets the user's clipboard content to the given string.
 			</description>
 		</method>
-		<method name="console_set_visible">
+		<method name="clipboard_set_primary">
 			<return type="void" />
-			<argument index="0" name="console_visible" type="bool" />
+			<argument index="0" name="clipboard_primary" type="String" />
 			<description>
+				Sets the user's primary clipboard content to the given string.
+				[b]Note:[/b] This method is only implemented on Linux.
 			</description>
 		</method>
 		<method name="create_sub_window">
@@ -264,11 +281,6 @@
 			<description>
 			</description>
 		</method>
-		<method name="is_console_visible" qualifiers="const">
-			<return type="bool" />
-			<description>
-			</description>
-		</method>
 		<method name="keyboard_get_current_layout" qualifiers="const">
 			<return type="int" />
 			<description>
@@ -315,11 +327,6 @@
 				[b]Note:[/b] This method is implemented on Linux, macOS and Windows.
 			</description>
 		</method>
-		<method name="mouse_get_absolute_position" qualifiers="const">
-			<return type="Vector2i" />
-			<description>
-			</description>
-		</method>
 		<method name="mouse_get_button_state" qualifiers="const">
 			<return type="int" enum="MouseButton" />
 			<description>
@@ -333,6 +340,7 @@
 		<method name="mouse_get_position" qualifiers="const">
 			<return type="Vector2i" />
 			<description>
+				Returns the mouse cursor's current position.
 			</description>
 		</method>
 		<method name="mouse_set_mode">
@@ -345,6 +353,7 @@
 			<return type="void" />
 			<argument index="0" name="position" type="Vector2i" />
 			<description>
+				Sets the mouse cursor position to the given [code]position[/code].
 			</description>
 		</method>
 		<method name="process_events">
@@ -373,7 +382,7 @@
 		<method name="screen_get_max_scale" qualifiers="const">
 			<return type="float" />
 			<description>
-				Return the greatest scale factor of all screens.
+				Returns the greatest scale factor of all screens.
 				[b]Note:[/b] On macOS returned value is [code]2.0[/code] if there is at least one hiDPI (Retina) screen in the system, and [code]1.0[/code] in all other cases.
 				[b]Note:[/b] This method is implemented on macOS.
 			</description>
@@ -394,7 +403,7 @@
 			<return type="float" />
 			<argument index="0" name="screen" type="int" default="-1" />
 			<description>
-				Return the scale factor of the specified screen by index.
+				Returns the scale factor of the specified screen by index.
 				[b]Note:[/b] On macOS returned value is [code]2.0[/code] for hiDPI (Retina) screen, and [code]1.0[/code] for all other cases.
 				[b]Note:[/b] This method is implemented on macOS.
 			</description>
@@ -538,6 +547,7 @@
 			<argument index="0" name="flag" type="int" enum="DisplayServer.WindowFlags" />
 			<argument index="1" name="window_id" type="int" default="0" />
 			<description>
+				Returns the current value of the given window's [code]flag[/code].
 			</description>
 		</method>
 		<method name="window_get_max_size" qualifiers="const">
@@ -556,12 +566,14 @@
 			<return type="int" enum="DisplayServer.WindowMode" />
 			<argument index="0" name="window_id" type="int" default="0" />
 			<description>
+				Returns the mode of the given window.
 			</description>
 		</method>
 		<method name="window_get_position" qualifiers="const">
 			<return type="Vector2i" />
 			<argument index="0" name="window_id" type="int" default="0" />
 			<description>
+				Returns the position of the given window to on the screen.
 			</description>
 		</method>
 		<method name="window_get_real_size" qualifiers="const">
@@ -615,6 +627,7 @@
 			<argument index="1" name="enabled" type="bool" />
 			<argument index="2" name="window_id" type="int" default="0" />
 			<description>
+				Enables or disables the given window's given [code]flag[/code]. See [enum WindowFlags] for possible values and their behavior.
 			</description>
 		</method>
 		<method name="window_set_ime_active">
@@ -666,6 +679,8 @@
 			<argument index="0" name="mode" type="int" enum="DisplayServer.WindowMode" />
 			<argument index="1" name="window_id" type="int" default="0" />
 			<description>
+				Sets window mode for the given window to [code]mode[/code]. See [enum WindowMode] for possible values and how each mode behaves.
+				[b]Note:[/b] Setting the window to fullscreen forcibly sets the borderless flag to [code]true[/code], so make sure to set it back to [code]false[/code] when not wanted.
 			</description>
 		</method>
 		<method name="window_set_mouse_passthrough">
@@ -706,6 +721,7 @@
 			<argument index="0" name="position" type="Vector2i" />
 			<argument index="1" name="window_id" type="int" default="0" />
 			<description>
+				Sets the position of the given window to [code]position[/code].
 			</description>
 		</method>
 		<method name="window_set_rect_changed_callback">
@@ -720,6 +736,7 @@
 			<argument index="0" name="size" type="Vector2i" />
 			<argument index="1" name="window_id" type="int" default="0" />
 			<description>
+				Sets the size of the given window to [code]size[/code].
 			</description>
 		</method>
 		<method name="window_set_title">
@@ -727,6 +744,7 @@
 			<argument index="0" name="title" type="String" />
 			<argument index="1" name="window_id" type="int" default="0" />
 			<description>
+				Sets the title of the given window to [code]title[/code].
 			</description>
 		</method>
 		<method name="window_set_transient">
@@ -775,21 +793,21 @@
 		</constant>
 		<constant name="FEATURE_NATIVE_DIALOG" value="9" enum="Feature">
 		</constant>
-		<constant name="FEATURE_CONSOLE_WINDOW" value="10" enum="Feature">
+		<constant name="FEATURE_IME" value="10" enum="Feature">
 		</constant>
-		<constant name="FEATURE_IME" value="11" enum="Feature">
+		<constant name="FEATURE_WINDOW_TRANSPARENCY" value="11" enum="Feature">
 		</constant>
-		<constant name="FEATURE_WINDOW_TRANSPARENCY" value="12" enum="Feature">
+		<constant name="FEATURE_HIDPI" value="12" enum="Feature">
 		</constant>
-		<constant name="FEATURE_HIDPI" value="13" enum="Feature">
+		<constant name="FEATURE_ICON" value="13" enum="Feature">
 		</constant>
-		<constant name="FEATURE_ICON" value="14" enum="Feature">
+		<constant name="FEATURE_NATIVE_ICON" value="14" enum="Feature">
 		</constant>
-		<constant name="FEATURE_NATIVE_ICON" value="15" enum="Feature">
+		<constant name="FEATURE_ORIENTATION" value="15" enum="Feature">
 		</constant>
-		<constant name="FEATURE_ORIENTATION" value="16" enum="Feature">
+		<constant name="FEATURE_SWAP_BUFFERS" value="16" enum="Feature">
 		</constant>
-		<constant name="FEATURE_SWAP_BUFFERS" value="17" enum="Feature">
+		<constant name="FEATURE_CLIPBOARD_PRIMARY" value="18" enum="Feature">
 		</constant>
 		<constant name="MOUSE_MODE_VISIBLE" value="0" enum="MouseMode">
 			Makes the mouse cursor visible if it is hidden.
@@ -871,7 +889,7 @@
 		</constant>
 		<constant name="WINDOW_MODE_FULLSCREEN" value="3" enum="WindowMode">
 			Fullscreen window mode. Note that this is not [i]exclusive[/i] fullscreen. On Windows and Linux, a borderless window is used to emulate fullscreen. On macOS, a new desktop is used to display the running project.
-			Regardless of the platform, enabling fullscreen will change the window size to match the monitor's size. Therefore, make sure your project supports [url=https://docs.godotengine.org/en/latest/tutorials/rendering/multiple_resolutions.html]multiple resolutions[/url] when enabling fullscreen mode.
+			Regardless of the platform, enabling fullscreen will change the window size to match the monitor's size. Therefore, make sure your project supports [url=$DOCS_URL/tutorials/rendering/multiple_resolutions.html]multiple resolutions[/url] when enabling fullscreen mode.
 		</constant>
 		<constant name="WINDOW_FLAG_RESIZE_DISABLED" value="0" enum="WindowFlags">
 		</constant>

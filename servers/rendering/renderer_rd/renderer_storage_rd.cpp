@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -324,75 +324,6 @@ Ref<Image> RendererStorageRD::_validate_texture_format(const Ref<Image> &p_image
 			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_B;
 			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_ONE;
 		} break; //unsigned float bc6hu
-		case Image::FORMAT_PVRTC1_2: {
-			//this is not properly supported by MoltekVK it seems, so best to use ETC2
-			if (RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
-				r_format.format = RD::DATA_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-				r_format.format_srgb = RD::DATA_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG;
-			} else {
-				//not supported, reconvert
-				r_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-				r_format.format_srgb = RD::DATA_FORMAT_R8G8B8A8_SRGB;
-				image->decompress();
-				image->convert(Image::FORMAT_RGBA8);
-			}
-			r_format.swizzle_r = RD::TEXTURE_SWIZZLE_R;
-			r_format.swizzle_g = RD::TEXTURE_SWIZZLE_G;
-			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_B;
-			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_ONE;
-
-		} break; //pvrtc
-		case Image::FORMAT_PVRTC1_2A: {
-			//this is not properly supported by MoltekVK it seems, so best to use ETC2
-			if (RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
-				r_format.format = RD::DATA_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-				r_format.format_srgb = RD::DATA_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG;
-			} else {
-				//not supported, reconvert
-				r_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-				r_format.format_srgb = RD::DATA_FORMAT_R8G8B8A8_SRGB;
-				image->decompress();
-				image->convert(Image::FORMAT_RGBA8);
-			}
-			r_format.swizzle_r = RD::TEXTURE_SWIZZLE_R;
-			r_format.swizzle_g = RD::TEXTURE_SWIZZLE_G;
-			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_B;
-			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_A;
-		} break;
-		case Image::FORMAT_PVRTC1_4: {
-			//this is not properly supported by MoltekVK it seems, so best to use ETC2
-			if (RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
-				r_format.format = RD::DATA_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG;
-				r_format.format_srgb = RD::DATA_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG;
-			} else {
-				//not supported, reconvert
-				r_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-				r_format.format_srgb = RD::DATA_FORMAT_R8G8B8A8_SRGB;
-				image->decompress();
-				image->convert(Image::FORMAT_RGBA8);
-			}
-			r_format.swizzle_r = RD::TEXTURE_SWIZZLE_R;
-			r_format.swizzle_g = RD::TEXTURE_SWIZZLE_G;
-			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_B;
-			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_ONE;
-		} break;
-		case Image::FORMAT_PVRTC1_4A: {
-			//this is not properly supported by MoltekVK it seems, so best to use ETC2
-			if (RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
-				r_format.format = RD::DATA_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG;
-				r_format.format_srgb = RD::DATA_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG;
-			} else {
-				//not supported, reconvert
-				r_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-				r_format.format_srgb = RD::DATA_FORMAT_R8G8B8A8_SRGB;
-				image->decompress();
-				image->convert(Image::FORMAT_RGBA8);
-			}
-			r_format.swizzle_r = RD::TEXTURE_SWIZZLE_R;
-			r_format.swizzle_g = RD::TEXTURE_SWIZZLE_G;
-			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_B;
-			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_A;
-		} break;
 		case Image::FORMAT_ETC2_R11: {
 			if (RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_EAC_R11_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
 				r_format.format = RD::DATA_FORMAT_EAC_R11_UNORM_BLOCK;
@@ -971,12 +902,7 @@ void RendererStorageRD::texture_2d_placeholder_initialize(RID p_texture) {
 	Ref<Image> image;
 	image.instantiate();
 	image->create(4, 4, false, Image::FORMAT_RGBA8);
-
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			image->set_pixel(i, j, Color(1, 0, 1, 1));
-		}
-	}
+	image->fill(Color(1, 0, 1, 1));
 
 	texture_2d_initialize(p_texture, image);
 }
@@ -987,12 +913,7 @@ void RendererStorageRD::texture_2d_layered_placeholder_initialize(RID p_texture,
 	Ref<Image> image;
 	image.instantiate();
 	image->create(4, 4, false, Image::FORMAT_RGBA8);
-
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			image->set_pixel(i, j, Color(1, 0, 1, 1));
-		}
-	}
+	image->fill(Color(1, 0, 1, 1));
 
 	Vector<Ref<Image>> images;
 	if (p_layered_type == RS::TEXTURE_LAYERED_2D_ARRAY) {
@@ -1013,12 +934,7 @@ void RendererStorageRD::texture_3d_placeholder_initialize(RID p_texture) {
 	Ref<Image> image;
 	image.instantiate();
 	image->create(4, 4, false, Image::FORMAT_RGBA8);
-
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			image->set_pixel(i, j, Color(1, 0, 1, 1));
-		}
-	}
+	image->fill(Color(1, 0, 1, 1));
 
 	Vector<Ref<Image>> images;
 	//cube
@@ -1034,7 +950,7 @@ Ref<Image> RendererStorageRD::texture_2d_get(RID p_texture) const {
 	ERR_FAIL_COND_V(!tex, Ref<Image>());
 
 #ifdef TOOLS_ENABLED
-	if (tex->image_cache_2d.is_valid()) {
+	if (tex->image_cache_2d.is_valid() && !tex->is_render_target) {
 		return tex->image_cache_2d;
 	}
 #endif
@@ -1049,7 +965,7 @@ Ref<Image> RendererStorageRD::texture_2d_get(RID p_texture) const {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::get_singleton()->is_editor_hint() && !tex->is_render_target) {
 		tex->image_cache_2d = image;
 	}
 #endif
@@ -1089,7 +1005,7 @@ Vector<Ref<Image>> RendererStorageRD::texture_3d_get(RID p_texture) const {
 		const Texture::BufferSlice3D &bs = tex->buffer_slices_3d[i];
 		ERR_FAIL_COND_V(bs.offset >= (uint32_t)all_data.size(), Vector<Ref<Image>>());
 		ERR_FAIL_COND_V(bs.offset + bs.buffer_size > (uint32_t)all_data.size(), Vector<Ref<Image>>());
-		Vector<uint8_t> sub_region = all_data.subarray(bs.offset, bs.offset + bs.buffer_size - 1);
+		Vector<uint8_t> sub_region = all_data.slice(bs.offset, bs.offset + bs.buffer_size);
 
 		Ref<Image> img;
 		img.instantiate();
@@ -1225,6 +1141,100 @@ void RendererStorageRD::CanvasTexture::clear_sets() {
 
 RendererStorageRD::CanvasTexture::~CanvasTexture() {
 	clear_sets();
+}
+
+void RendererStorageRD::sampler_rd_configure_custom(float p_mipmap_bias) {
+	for (int i = 1; i < RS::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
+		for (int j = 1; j < RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
+			RD::SamplerState sampler_state;
+			switch (i) {
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.max_lod = 0;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.max_lod = 0;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_NEAREST;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_LINEAR;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_NEAREST;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+					sampler_state.use_anisotropy = true;
+					sampler_state.anisotropy_max = 1 << int(GLOBAL_GET("rendering/textures/default_filters/anisotropic_filtering_level"));
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_LINEAR;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+					sampler_state.use_anisotropy = true;
+					sampler_state.anisotropy_max = 1 << int(GLOBAL_GET("rendering/textures/default_filters/anisotropic_filtering_level"));
+
+				} break;
+				default: {
+				}
+			}
+			switch (j) {
+				case RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED: {
+					sampler_state.repeat_u = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+					sampler_state.repeat_v = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+					sampler_state.repeat_w = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED: {
+					sampler_state.repeat_u = RD::SAMPLER_REPEAT_MODE_REPEAT;
+					sampler_state.repeat_v = RD::SAMPLER_REPEAT_MODE_REPEAT;
+					sampler_state.repeat_w = RD::SAMPLER_REPEAT_MODE_REPEAT;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_REPEAT_MIRROR: {
+					sampler_state.repeat_u = RD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+					sampler_state.repeat_v = RD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+					sampler_state.repeat_w = RD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+				} break;
+				default: {
+				}
+			}
+
+			if (custom_rd_samplers[i][j].is_valid()) {
+				RD::get_singleton()->free(custom_rd_samplers[i][j]);
+			}
+
+			custom_rd_samplers[i][j] = RD::get_singleton()->sampler_create(sampler_state);
+		}
+	}
 }
 
 RID RendererStorageRD::canvas_texture_allocate() {
@@ -1399,6 +1409,8 @@ void RendererStorageRD::shader_set_code(RID p_shader, const String &p_code) {
 		new_type = SHADER_TYPE_3D;
 	} else if (mode_string == "sky") {
 		new_type = SHADER_TYPE_SKY;
+	} else if (mode_string == "fog") {
+		new_type = SHADER_TYPE_FOG;
 	} else {
 		new_type = SHADER_TYPE_MAX;
 	}
@@ -1438,8 +1450,10 @@ void RendererStorageRD::shader_set_code(RID p_shader, const String &p_code) {
 		}
 
 		if (shader->data) {
-			for (const KeyValue<StringName, RID> &E : shader->default_texture_parameter) {
-				shader->data->set_default_texture_param(E.key, E.value);
+			for (const KeyValue<StringName, Map<int, RID>> &E : shader->default_texture_parameter) {
+				for (const KeyValue<int, RID> &E2 : E.value) {
+					shader->data->set_default_texture_param(E.key, E2.value, E2.key);
+				}
 			}
 		}
 	}
@@ -1469,17 +1483,26 @@ void RendererStorageRD::shader_get_param_list(RID p_shader, List<PropertyInfo> *
 	}
 }
 
-void RendererStorageRD::shader_set_default_texture_param(RID p_shader, const StringName &p_name, RID p_texture) {
+void RendererStorageRD::shader_set_default_texture_param(RID p_shader, const StringName &p_name, RID p_texture, int p_index) {
 	Shader *shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_COND(!shader);
 
 	if (p_texture.is_valid() && texture_owner.owns(p_texture)) {
-		shader->default_texture_parameter[p_name] = p_texture;
+		if (!shader->default_texture_parameter.has(p_name)) {
+			shader->default_texture_parameter[p_name] = Map<int, RID>();
+		}
+		shader->default_texture_parameter[p_name][p_index] = p_texture;
 	} else {
-		shader->default_texture_parameter.erase(p_name);
+		if (shader->default_texture_parameter.has(p_name) && shader->default_texture_parameter[p_name].has(p_index)) {
+			shader->default_texture_parameter[p_name].erase(p_index);
+
+			if (shader->default_texture_parameter[p_name].is_empty()) {
+				shader->default_texture_parameter.erase(p_name);
+			}
+		}
 	}
 	if (shader->data) {
-		shader->data->set_default_texture_param(p_name, p_texture);
+		shader->data->set_default_texture_param(p_name, p_texture, p_index);
 	}
 	for (Set<Material *>::Element *E = shader->owners.front(); E; E = E->next()) {
 		Material *material = E->get();
@@ -1487,11 +1510,11 @@ void RendererStorageRD::shader_set_default_texture_param(RID p_shader, const Str
 	}
 }
 
-RID RendererStorageRD::shader_get_default_texture_param(RID p_shader, const StringName &p_name) const {
+RID RendererStorageRD::shader_get_default_texture_param(RID p_shader, const StringName &p_name, int p_index) const {
 	Shader *shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_COND_V(!shader, RID());
-	if (shader->default_texture_parameter.has(p_name)) {
-		return shader->default_texture_parameter[p_name];
+	if (shader->default_texture_parameter.has(p_name) && shader->default_texture_parameter[p_name].has(p_index)) {
+		return shader->default_texture_parameter[p_name][p_index];
 	}
 
 	return RID();
@@ -1532,14 +1555,14 @@ void RendererStorageRD::material_initialize(RID p_rid) {
 }
 
 void RendererStorageRD::_material_queue_update(Material *material, bool p_uniform, bool p_texture) {
+	material->uniform_dirty = material->uniform_dirty || p_uniform;
+	material->texture_dirty = material->texture_dirty || p_texture;
+
 	if (material->update_element.in_list()) {
 		return;
 	}
 
 	material_update_list.add(&material->update_element);
-
-	material->uniform_dirty = material->uniform_dirty || p_uniform;
-	material->texture_dirty = material->texture_dirty || p_texture;
 }
 
 void RendererStorageRD::material_set_shader(RID p_material, RID p_shader) {
@@ -1691,73 +1714,183 @@ void RendererStorageRD::material_set_data_request_function(ShaderType p_shader_t
 	material_data_request_func[p_shader_type] = p_function;
 }
 
-_FORCE_INLINE_ static void _fill_std140_variant_ubo_value(ShaderLanguage::DataType type, const Variant &value, uint8_t *data, bool p_linear_color) {
+_FORCE_INLINE_ static void _fill_std140_variant_ubo_value(ShaderLanguage::DataType type, int p_array_size, const Variant &value, uint8_t *data, bool p_linear_color) {
 	switch (type) {
 		case ShaderLanguage::TYPE_BOOL: {
-			bool v = value;
-
 			uint32_t *gui = (uint32_t *)data;
-			*gui = v ? 1 : 0;
+
+			if (p_array_size > 0) {
+				const PackedInt32Array &ba = value;
+				int s = ba.size();
+				const int *r = ba.ptr();
+
+				for (int i = 0, j = 0; i < p_array_size; i++, j += 4) {
+					if (i < s) {
+						gui[j] = (r[i] != 0) ? 1 : 0;
+					} else {
+						gui[j] = 0;
+					}
+					gui[j + 1] = 0; // ignored
+					gui[j + 2] = 0; // ignored
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				bool v = value;
+				gui[0] = v ? 1 : 0;
+			}
 		} break;
 		case ShaderLanguage::TYPE_BVEC2: {
-			int v = value;
 			uint32_t *gui = (uint32_t *)data;
-			gui[0] = v & 1 ? 1 : 0;
-			gui[1] = v & 2 ? 1 : 0;
 
+			if (p_array_size > 0) {
+				const PackedInt32Array &ba = value;
+				int s = ba.size();
+				const int *r = ba.ptr();
+				int count = 2 * p_array_size;
+
+				for (int i = 0, j = 0; i < count; i += 2, j += 4) {
+					if (i < s) {
+						gui[j] = r[i] ? 1 : 0;
+						gui[j + 1] = r[i + 1] ? 1 : 0;
+					} else {
+						gui[j] = 0;
+						gui[j + 1] = 0;
+					}
+					gui[j + 2] = 0; // ignored
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				int v = value;
+				gui[0] = v & 1 ? 1 : 0;
+				gui[1] = v & 2 ? 1 : 0;
+			}
 		} break;
 		case ShaderLanguage::TYPE_BVEC3: {
-			int v = value;
 			uint32_t *gui = (uint32_t *)data;
-			gui[0] = (v & 1) ? 1 : 0;
-			gui[1] = (v & 2) ? 1 : 0;
-			gui[2] = (v & 4) ? 1 : 0;
 
+			if (p_array_size > 0) {
+				const PackedInt32Array &ba = value;
+				int s = ba.size();
+				const int *r = ba.ptr();
+				int count = 3 * p_array_size;
+
+				for (int i = 0, j = 0; i < count; i += 3, j += 4) {
+					if (i < s) {
+						gui[j] = r[i] ? 1 : 0;
+						gui[j + 1] = r[i + 1] ? 1 : 0;
+						gui[j + 2] = r[i + 2] ? 1 : 0;
+					} else {
+						gui[j] = 0;
+						gui[j + 1] = 0;
+						gui[j + 2] = 0;
+					}
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				int v = value;
+				gui[0] = (v & 1) ? 1 : 0;
+				gui[1] = (v & 2) ? 1 : 0;
+				gui[2] = (v & 4) ? 1 : 0;
+			}
 		} break;
 		case ShaderLanguage::TYPE_BVEC4: {
-			int v = value;
 			uint32_t *gui = (uint32_t *)data;
-			gui[0] = (v & 1) ? 1 : 0;
-			gui[1] = (v & 2) ? 1 : 0;
-			gui[2] = (v & 4) ? 1 : 0;
-			gui[3] = (v & 8) ? 1 : 0;
 
+			if (p_array_size > 0) {
+				const PackedInt32Array &ba = value;
+				int s = ba.size();
+				const int *r = ba.ptr();
+				int count = 4 * p_array_size;
+
+				for (int i = 0; i < count; i += 4) {
+					if (i < s) {
+						gui[i] = r[i] ? 1 : 0;
+						gui[i + 1] = r[i + 1] ? 1 : 0;
+						gui[i + 2] = r[i + 2] ? 1 : 0;
+						gui[i + 3] = r[i + 3] ? 1 : 0;
+					} else {
+						gui[i] = 0;
+						gui[i + 1] = 0;
+						gui[i + 2] = 0;
+						gui[i + 3] = 0;
+					}
+				}
+			} else {
+				int v = value;
+				gui[0] = (v & 1) ? 1 : 0;
+				gui[1] = (v & 2) ? 1 : 0;
+				gui[2] = (v & 4) ? 1 : 0;
+				gui[3] = (v & 8) ? 1 : 0;
+			}
 		} break;
 		case ShaderLanguage::TYPE_INT: {
-			int v = value;
 			int32_t *gui = (int32_t *)data;
-			gui[0] = v;
 
+			if (p_array_size > 0) {
+				Vector<int> iv = value;
+				int s = iv.size();
+				const int *r = iv.ptr();
+
+				for (int i = 0, j = 0; i < p_array_size; i++, j += 4) {
+					if (i < s) {
+						gui[j] = r[i];
+					} else {
+						gui[j] = 0;
+					}
+					gui[j + 1] = 0; // ignored
+					gui[j + 2] = 0; // ignored
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				int v = value;
+				gui[0] = v;
+			}
 		} break;
 		case ShaderLanguage::TYPE_IVEC2: {
 			Vector<int> iv = value;
 			int s = iv.size();
 			int32_t *gui = (int32_t *)data;
 
-			const int *r = iv.ptr();
-
-			for (int i = 0; i < 2; i++) {
-				if (i < s) {
-					gui[i] = r[i];
-				} else {
-					gui[i] = 0;
-				}
+			if (p_array_size <= 0) {
+				p_array_size = 1;
 			}
+			int count = 2 * p_array_size;
 
+			const int *r = iv.ptr();
+			for (int i = 0, j = 0; i < count; i += 2, j += 4) {
+				if (i < s) {
+					gui[j] = r[i];
+					gui[j + 1] = r[i + 1];
+				} else {
+					gui[j] = 0;
+					gui[j + 1] = 0;
+				}
+				gui[j + 2] = 0; // ignored
+				gui[j + 3] = 0; // ignored
+			}
 		} break;
 		case ShaderLanguage::TYPE_IVEC3: {
 			Vector<int> iv = value;
 			int s = iv.size();
 			int32_t *gui = (int32_t *)data;
 
-			const int *r = iv.ptr();
+			if (p_array_size <= 0) {
+				p_array_size = 1;
+			}
+			int count = 3 * p_array_size;
 
-			for (int i = 0; i < 3; i++) {
+			const int *r = iv.ptr();
+			for (int i = 0, j = 0; i < count; i += 3, j += 4) {
 				if (i < s) {
-					gui[i] = r[i];
+					gui[j] = r[i];
+					gui[j + 1] = r[i + 1];
+					gui[j + 2] = r[i + 2];
 				} else {
-					gui[i] = 0;
+					gui[j] = 0;
+					gui[j + 1] = 0;
+					gui[j + 2] = 0;
 				}
+				gui[j + 3] = 0; // ignored
 			}
 		} break;
 		case ShaderLanguage::TYPE_IVEC4: {
@@ -1765,35 +1898,70 @@ _FORCE_INLINE_ static void _fill_std140_variant_ubo_value(ShaderLanguage::DataTy
 			int s = iv.size();
 			int32_t *gui = (int32_t *)data;
 
-			const int *r = iv.ptr();
+			if (p_array_size <= 0) {
+				p_array_size = 1;
+			}
+			int count = 4 * p_array_size;
 
-			for (int i = 0; i < 4; i++) {
+			const int *r = iv.ptr();
+			for (int i = 0; i < count; i += 4) {
 				if (i < s) {
 					gui[i] = r[i];
+					gui[i + 1] = r[i + 1];
+					gui[i + 2] = r[i + 2];
+					gui[i + 3] = r[i + 3];
 				} else {
 					gui[i] = 0;
+					gui[i + 1] = 0;
+					gui[i + 2] = 0;
+					gui[i + 3] = 0;
 				}
 			}
 		} break;
 		case ShaderLanguage::TYPE_UINT: {
-			int v = value;
 			uint32_t *gui = (uint32_t *)data;
-			gui[0] = v;
 
+			if (p_array_size > 0) {
+				Vector<int> iv = value;
+				int s = iv.size();
+				const int *r = iv.ptr();
+
+				for (int i = 0, j = 0; i < p_array_size; i++, j += 4) {
+					if (i < s) {
+						gui[j] = r[i];
+					} else {
+						gui[j] = 0;
+					}
+					gui[j + 1] = 0; // ignored
+					gui[j + 2] = 0; // ignored
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				int v = value;
+				gui[0] = v;
+			}
 		} break;
 		case ShaderLanguage::TYPE_UVEC2: {
 			Vector<int> iv = value;
 			int s = iv.size();
 			uint32_t *gui = (uint32_t *)data;
 
-			const int *r = iv.ptr();
+			if (p_array_size <= 0) {
+				p_array_size = 1;
+			}
+			int count = 2 * p_array_size;
 
-			for (int i = 0; i < 2; i++) {
+			const int *r = iv.ptr();
+			for (int i = 0, j = 0; i < count; i += 2, j += 4) {
 				if (i < s) {
-					gui[i] = r[i];
+					gui[j] = r[i];
+					gui[j + 1] = r[i + 1];
 				} else {
-					gui[i] = 0;
+					gui[j] = 0;
+					gui[j + 1] = 0;
 				}
+				gui[j + 2] = 0; // ignored
+				gui[j + 3] = 0; // ignored
 			}
 		} break;
 		case ShaderLanguage::TYPE_UVEC3: {
@@ -1801,141 +1969,370 @@ _FORCE_INLINE_ static void _fill_std140_variant_ubo_value(ShaderLanguage::DataTy
 			int s = iv.size();
 			uint32_t *gui = (uint32_t *)data;
 
-			const int *r = iv.ptr();
-
-			for (int i = 0; i < 3; i++) {
-				if (i < s) {
-					gui[i] = r[i];
-				} else {
-					gui[i] = 0;
-				}
+			if (p_array_size <= 0) {
+				p_array_size = 1;
 			}
+			int count = 3 * p_array_size;
 
+			const int *r = iv.ptr();
+			for (int i = 0, j = 0; i < count; i += 3, j += 4) {
+				if (i < s) {
+					gui[j] = r[i];
+					gui[j + 1] = r[i + 1];
+					gui[j + 2] = r[i + 2];
+				} else {
+					gui[j] = 0;
+					gui[j + 1] = 0;
+					gui[j + 2] = 0;
+				}
+				gui[j + 3] = 0; // ignored
+			}
 		} break;
 		case ShaderLanguage::TYPE_UVEC4: {
 			Vector<int> iv = value;
 			int s = iv.size();
 			uint32_t *gui = (uint32_t *)data;
 
-			const int *r = iv.ptr();
+			if (p_array_size <= 0) {
+				p_array_size = 1;
+			}
+			int count = 4 * p_array_size;
 
-			for (int i = 0; i < 4; i++) {
+			const int *r = iv.ptr();
+			for (int i = 0; i < count; i++) {
 				if (i < s) {
 					gui[i] = r[i];
+					gui[i + 1] = r[i + 1];
+					gui[i + 2] = r[i + 2];
+					gui[i + 3] = r[i + 3];
 				} else {
 					gui[i] = 0;
+					gui[i + 1] = 0;
+					gui[i + 2] = 0;
+					gui[i + 3] = 0;
 				}
 			}
 		} break;
 		case ShaderLanguage::TYPE_FLOAT: {
-			float v = value;
 			float *gui = (float *)data;
-			gui[0] = v;
 
+			if (p_array_size > 0) {
+				const PackedFloat32Array &a = value;
+				int s = a.size();
+
+				for (int i = 0, j = 0; i < p_array_size; i++, j += 4) {
+					if (i < s) {
+						gui[j] = a[i];
+					} else {
+						gui[j] = 0;
+					}
+					gui[j + 1] = 0; // ignored
+					gui[j + 2] = 0; // ignored
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				float v = value;
+				gui[0] = v;
+			}
 		} break;
 		case ShaderLanguage::TYPE_VEC2: {
-			Vector2 v = value;
 			float *gui = (float *)data;
-			gui[0] = v.x;
-			gui[1] = v.y;
 
+			if (p_array_size > 0) {
+				const PackedVector2Array &a = value;
+				int s = a.size();
+
+				for (int i = 0, j = 0; i < p_array_size; i++, j += 4) {
+					if (i < s) {
+						gui[j] = a[i].x;
+						gui[j + 1] = a[i].y;
+					} else {
+						gui[j] = 0;
+						gui[j + 1] = 0;
+					}
+					gui[j + 2] = 0; // ignored
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				Vector2 v = value;
+				gui[0] = v.x;
+				gui[1] = v.y;
+			}
 		} break;
 		case ShaderLanguage::TYPE_VEC3: {
-			Vector3 v = value;
 			float *gui = (float *)data;
-			gui[0] = v.x;
-			gui[1] = v.y;
-			gui[2] = v.z;
 
+			if (p_array_size > 0) {
+				const PackedVector3Array &a = value;
+				int s = a.size();
+
+				for (int i = 0, j = 0; i < p_array_size; i++, j += 4) {
+					if (i < s) {
+						gui[j] = a[i].x;
+						gui[j + 1] = a[i].y;
+						gui[j + 2] = a[i].z;
+					} else {
+						gui[j] = 0;
+						gui[j + 1] = 0;
+						gui[j + 2] = 0;
+					}
+					gui[j + 3] = 0; // ignored
+				}
+			} else {
+				Vector3 v = value;
+				gui[0] = v.x;
+				gui[1] = v.y;
+				gui[2] = v.z;
+			}
 		} break;
 		case ShaderLanguage::TYPE_VEC4: {
 			float *gui = (float *)data;
 
-			if (value.get_type() == Variant::COLOR) {
-				Color v = value;
+			if (p_array_size > 0) {
+				if (value.get_type() == Variant::PACKED_COLOR_ARRAY) {
+					const PackedColorArray &a = value;
+					int s = a.size();
 
-				if (p_linear_color) {
-					v = v.to_linear();
+					for (int i = 0, j = 0; i < p_array_size; i++, j += 4) {
+						if (i < s) {
+							Color color = a[i];
+							if (p_linear_color) {
+								color = color.to_linear();
+							}
+							gui[j] = color.r;
+							gui[j + 1] = color.g;
+							gui[j + 2] = color.b;
+							gui[j + 3] = color.a;
+						} else {
+							gui[j] = 0;
+							gui[j + 1] = 0;
+							gui[j + 2] = 0;
+							gui[j + 3] = 0;
+						}
+					}
+				} else {
+					const PackedFloat32Array &a = value;
+					int s = a.size();
+					int count = 4 * p_array_size;
+
+					for (int i = 0; i < count; i += 4) {
+						if (i + 3 < s) {
+							gui[i] = a[i];
+							gui[i + 1] = a[i + 1];
+							gui[i + 2] = a[i + 2];
+							gui[i + 3] = a[i + 3];
+						} else {
+							gui[i] = 0;
+							gui[i + 1] = 0;
+							gui[i + 2] = 0;
+							gui[i + 3] = 0;
+						}
+					}
 				}
-
-				gui[0] = v.r;
-				gui[1] = v.g;
-				gui[2] = v.b;
-				gui[3] = v.a;
-			} else if (value.get_type() == Variant::RECT2) {
-				Rect2 v = value;
-
-				gui[0] = v.position.x;
-				gui[1] = v.position.y;
-				gui[2] = v.size.x;
-				gui[3] = v.size.y;
-			} else if (value.get_type() == Variant::QUATERNION) {
-				Quaternion v = value;
-
-				gui[0] = v.x;
-				gui[1] = v.y;
-				gui[2] = v.z;
-				gui[3] = v.w;
 			} else {
-				Plane v = value;
+				if (value.get_type() == Variant::COLOR) {
+					Color v = value;
 
-				gui[0] = v.normal.x;
-				gui[1] = v.normal.y;
-				gui[2] = v.normal.z;
-				gui[3] = v.d;
+					if (p_linear_color) {
+						v = v.to_linear();
+					}
+
+					gui[0] = v.r;
+					gui[1] = v.g;
+					gui[2] = v.b;
+					gui[3] = v.a;
+				} else if (value.get_type() == Variant::RECT2) {
+					Rect2 v = value;
+
+					gui[0] = v.position.x;
+					gui[1] = v.position.y;
+					gui[2] = v.size.x;
+					gui[3] = v.size.y;
+				} else if (value.get_type() == Variant::QUATERNION) {
+					Quaternion v = value;
+
+					gui[0] = v.x;
+					gui[1] = v.y;
+					gui[2] = v.z;
+					gui[3] = v.w;
+				} else {
+					Plane v = value;
+
+					gui[0] = v.normal.x;
+					gui[1] = v.normal.y;
+					gui[2] = v.normal.z;
+					gui[3] = v.d;
+				}
 			}
 		} break;
 		case ShaderLanguage::TYPE_MAT2: {
-			Transform2D v = value;
 			float *gui = (float *)data;
 
-			//in std140 members of mat2 are treated as vec4s
-			gui[0] = v.elements[0][0];
-			gui[1] = v.elements[0][1];
-			gui[2] = 0;
-			gui[3] = 0;
-			gui[4] = v.elements[1][0];
-			gui[5] = v.elements[1][1];
-			gui[6] = 0;
-			gui[7] = 0;
+			if (p_array_size > 0) {
+				const PackedFloat32Array &a = value;
+				int s = a.size();
+
+				for (int i = 0, j = 0; i < p_array_size * 4; i += 4, j += 8) {
+					if (i + 3 < s) {
+						gui[j] = a[i];
+						gui[j + 1] = a[i + 1];
+
+						gui[j + 4] = a[i + 2];
+						gui[j + 5] = a[i + 3];
+					} else {
+						gui[j] = 1;
+						gui[j + 1] = 0;
+
+						gui[j + 4] = 0;
+						gui[j + 5] = 1;
+					}
+					gui[j + 2] = 0; // ignored
+					gui[j + 3] = 0; // ignored
+					gui[j + 6] = 0; // ignored
+					gui[j + 7] = 0; // ignored
+				}
+			} else {
+				Transform2D v = value;
+
+				//in std140 members of mat2 are treated as vec4s
+				gui[0] = v.elements[0][0];
+				gui[1] = v.elements[0][1];
+				gui[2] = 0; // ignored
+				gui[3] = 0; // ignored
+
+				gui[4] = v.elements[1][0];
+				gui[5] = v.elements[1][1];
+				gui[6] = 0; // ignored
+				gui[7] = 0; // ignored
+			}
 		} break;
 		case ShaderLanguage::TYPE_MAT3: {
-			Basis v = value;
 			float *gui = (float *)data;
 
-			gui[0] = v.elements[0][0];
-			gui[1] = v.elements[1][0];
-			gui[2] = v.elements[2][0];
-			gui[3] = 0;
-			gui[4] = v.elements[0][1];
-			gui[5] = v.elements[1][1];
-			gui[6] = v.elements[2][1];
-			gui[7] = 0;
-			gui[8] = v.elements[0][2];
-			gui[9] = v.elements[1][2];
-			gui[10] = v.elements[2][2];
-			gui[11] = 0;
+			if (p_array_size > 0) {
+				const PackedFloat32Array &a = value;
+				int s = a.size();
+
+				for (int i = 0, j = 0; i < p_array_size * 9; i += 9, j += 12) {
+					if (i + 8 < s) {
+						gui[j] = a[i];
+						gui[j + 1] = a[i + 1];
+						gui[j + 2] = a[i + 2];
+
+						gui[j + 4] = a[i + 3];
+						gui[j + 5] = a[i + 4];
+						gui[j + 6] = a[i + 5];
+
+						gui[j + 8] = a[i + 6];
+						gui[j + 9] = a[i + 7];
+						gui[j + 10] = a[i + 8];
+					} else {
+						gui[j] = 1;
+						gui[j + 1] = 0;
+						gui[j + 2] = 0;
+
+						gui[j + 4] = 0;
+						gui[j + 5] = 1;
+						gui[j + 6] = 0;
+
+						gui[j + 8] = 0;
+						gui[j + 9] = 0;
+						gui[j + 10] = 1;
+					}
+					gui[j + 3] = 0; // ignored
+					gui[j + 7] = 0; // ignored
+					gui[j + 11] = 0; // ignored
+				}
+			} else {
+				Basis v = value;
+				gui[0] = v.elements[0][0];
+				gui[1] = v.elements[1][0];
+				gui[2] = v.elements[2][0];
+				gui[3] = 0; // ignored
+
+				gui[4] = v.elements[0][1];
+				gui[5] = v.elements[1][1];
+				gui[6] = v.elements[2][1];
+				gui[7] = 0; // ignored
+
+				gui[8] = v.elements[0][2];
+				gui[9] = v.elements[1][2];
+				gui[10] = v.elements[2][2];
+				gui[11] = 0; // ignored
+			}
 		} break;
 		case ShaderLanguage::TYPE_MAT4: {
-			Transform3D v = value;
 			float *gui = (float *)data;
 
-			gui[0] = v.basis.elements[0][0];
-			gui[1] = v.basis.elements[1][0];
-			gui[2] = v.basis.elements[2][0];
-			gui[3] = 0;
-			gui[4] = v.basis.elements[0][1];
-			gui[5] = v.basis.elements[1][1];
-			gui[6] = v.basis.elements[2][1];
-			gui[7] = 0;
-			gui[8] = v.basis.elements[0][2];
-			gui[9] = v.basis.elements[1][2];
-			gui[10] = v.basis.elements[2][2];
-			gui[11] = 0;
-			gui[12] = v.origin.x;
-			gui[13] = v.origin.y;
-			gui[14] = v.origin.z;
-			gui[15] = 1;
+			if (p_array_size > 0) {
+				const PackedFloat32Array &a = value;
+				int s = a.size();
+
+				for (int i = 0; i < p_array_size * 16; i += 16) {
+					if (i + 15 < s) {
+						gui[i] = a[i];
+						gui[i + 1] = a[i + 1];
+						gui[i + 2] = a[i + 2];
+						gui[i + 3] = a[i + 3];
+
+						gui[i + 4] = a[i + 4];
+						gui[i + 5] = a[i + 5];
+						gui[i + 6] = a[i + 6];
+						gui[i + 7] = a[i + 7];
+
+						gui[i + 8] = a[i + 8];
+						gui[i + 9] = a[i + 9];
+						gui[i + 10] = a[i + 10];
+						gui[i + 11] = a[i + 11];
+
+						gui[i + 12] = a[i + 12];
+						gui[i + 13] = a[i + 13];
+						gui[i + 14] = a[i + 14];
+						gui[i + 15] = a[i + 15];
+					} else {
+						gui[i] = 1;
+						gui[i + 1] = 0;
+						gui[i + 2] = 0;
+						gui[i + 3] = 0;
+
+						gui[i + 4] = 0;
+						gui[i + 5] = 1;
+						gui[i + 6] = 0;
+						gui[i + 7] = 0;
+
+						gui[i + 8] = 0;
+						gui[i + 9] = 0;
+						gui[i + 10] = 1;
+						gui[i + 11] = 0;
+
+						gui[i + 12] = 0;
+						gui[i + 13] = 0;
+						gui[i + 14] = 0;
+						gui[i + 15] = 1;
+					}
+				}
+			} else {
+				Transform3D v = value;
+				gui[0] = v.basis.elements[0][0];
+				gui[1] = v.basis.elements[1][0];
+				gui[2] = v.basis.elements[2][0];
+				gui[3] = 0;
+
+				gui[4] = v.basis.elements[0][1];
+				gui[5] = v.basis.elements[1][1];
+				gui[6] = v.basis.elements[2][1];
+				gui[7] = 0;
+
+				gui[8] = v.basis.elements[0][2];
+				gui[9] = v.basis.elements[1][2];
+				gui[10] = v.basis.elements[2][2];
+				gui[11] = 0;
+
+				gui[12] = v.origin.x;
+				gui[13] = v.origin.y;
+				gui[14] = v.origin.z;
+				gui[15] = 1;
+			}
 		} break;
 		default: {
 		}
@@ -2094,19 +2491,23 @@ _FORCE_INLINE_ static void _fill_std140_ubo_value(ShaderLanguage::DataType type,
 	}
 }
 
-_FORCE_INLINE_ static void _fill_std140_ubo_empty(ShaderLanguage::DataType type, uint8_t *data) {
+_FORCE_INLINE_ static void _fill_std140_ubo_empty(ShaderLanguage::DataType type, int p_array_size, uint8_t *data) {
+	if (p_array_size <= 0) {
+		p_array_size = 1;
+	}
+
 	switch (type) {
 		case ShaderLanguage::TYPE_BOOL:
 		case ShaderLanguage::TYPE_INT:
 		case ShaderLanguage::TYPE_UINT:
 		case ShaderLanguage::TYPE_FLOAT: {
-			memset(data, 0, 4);
+			memset(data, 0, 4 * p_array_size);
 		} break;
 		case ShaderLanguage::TYPE_BVEC2:
 		case ShaderLanguage::TYPE_IVEC2:
 		case ShaderLanguage::TYPE_UVEC2:
 		case ShaderLanguage::TYPE_VEC2: {
-			memset(data, 0, 8);
+			memset(data, 0, 8 * p_array_size);
 		} break;
 		case ShaderLanguage::TYPE_BVEC3:
 		case ShaderLanguage::TYPE_IVEC3:
@@ -2116,16 +2517,16 @@ _FORCE_INLINE_ static void _fill_std140_ubo_empty(ShaderLanguage::DataType type,
 		case ShaderLanguage::TYPE_IVEC4:
 		case ShaderLanguage::TYPE_UVEC4:
 		case ShaderLanguage::TYPE_VEC4: {
-			memset(data, 0, 16);
+			memset(data, 0, 16 * p_array_size);
 		} break;
 		case ShaderLanguage::TYPE_MAT2: {
-			memset(data, 0, 32);
+			memset(data, 0, 32 * p_array_size);
 		} break;
 		case ShaderLanguage::TYPE_MAT3: {
-			memset(data, 0, 48);
+			memset(data, 0, 48 * p_array_size);
 		} break;
 		case ShaderLanguage::TYPE_MAT4: {
-			memset(data, 0, 64);
+			memset(data, 0, 64 * p_array_size);
 		} break;
 
 		default: {
@@ -2142,7 +2543,7 @@ void RendererStorageRD::MaterialData::update_uniform_buffer(const Map<StringName
 		}
 
 		if (E.value.scope == ShaderLanguage::ShaderNode::Uniform::SCOPE_INSTANCE) {
-			continue; //instance uniforms don't appear in the bufferr
+			continue; //instance uniforms don't appear in the buffer
 		}
 
 		if (E.value.scope == ShaderLanguage::ShaderNode::Uniform::SCOPE_GLOBAL) {
@@ -2167,7 +2568,17 @@ void RendererStorageRD::MaterialData::update_uniform_buffer(const Map<StringName
 		//regular uniform
 		uint32_t offset = p_uniform_offsets[E.value.order];
 #ifdef DEBUG_ENABLED
-		uint32_t size = ShaderLanguage::get_type_size(E.value.type);
+		uint32_t size = 0U;
+		// The following code enforces a 16-byte alignment of uniform arrays.
+		if (E.value.array_size > 0) {
+			size = ShaderLanguage::get_datatype_size(E.value.type) * E.value.array_size;
+			int m = (16 * E.value.array_size);
+			if ((size % m) != 0U) {
+				size += m - (size % m);
+			}
+		} else {
+			size = ShaderLanguage::get_datatype_size(E.value.type);
+		}
 		ERR_CONTINUE(offset + size > p_buffer_size);
 #endif
 		uint8_t *data = &p_buffer[offset];
@@ -2175,7 +2586,7 @@ void RendererStorageRD::MaterialData::update_uniform_buffer(const Map<StringName
 
 		if (V) {
 			//user provided
-			_fill_std140_variant_ubo_value(E.value.type, V->get(), data, p_use_linear_color);
+			_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, V->get(), data, p_use_linear_color);
 
 		} else if (E.value.default_value.size()) {
 			//default value
@@ -2185,10 +2596,10 @@ void RendererStorageRD::MaterialData::update_uniform_buffer(const Map<StringName
 			//zero because it was not provided
 			if (E.value.type == ShaderLanguage::TYPE_VEC4 && E.value.hint == ShaderLanguage::ShaderNode::Uniform::HINT_COLOR) {
 				//colors must be set as black, with alpha as 1.0
-				_fill_std140_variant_ubo_value(E.value.type, Color(0, 0, 0, 1), data, p_use_linear_color);
+				_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, Color(0, 0, 0, 1), data, p_use_linear_color);
 			} else {
 				//else just zero it out
-				_fill_std140_ubo_empty(E.value.type, data);
+				_fill_std140_ubo_empty(E.value.type, E.value.array_size, data);
 			}
 		}
 	}
@@ -2230,7 +2641,7 @@ RendererStorageRD::MaterialData::~MaterialData() {
 	}
 }
 
-void RendererStorageRD::MaterialData::update_textures(const Map<StringName, Variant> &p_parameters, const Map<StringName, RID> &p_default_textures, const Vector<ShaderCompilerRD::GeneratedCode::Texture> &p_texture_uniforms, RID *p_textures, bool p_use_linear_color) {
+void RendererStorageRD::MaterialData::update_textures(const Map<StringName, Variant> &p_parameters, const Map<StringName, Map<int, RID>> &p_default_textures, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, RID *p_textures, bool p_use_linear_color) {
 	RendererStorageRD *singleton = (RendererStorageRD *)RendererStorage::base_singleton;
 #ifdef TOOLS_ENABLED
 	Texture *roughness_detect_texture = nullptr;
@@ -2241,10 +2652,11 @@ void RendererStorageRD::MaterialData::update_textures(const Map<StringName, Vari
 	bool uses_global_textures = false;
 	global_textures_pass++;
 
-	for (int i = 0; i < p_texture_uniforms.size(); i++) {
+	for (int i = 0, k = 0; i < p_texture_uniforms.size(); i++) {
 		const StringName &uniform_name = p_texture_uniforms[i].name;
+		int uniform_array_size = p_texture_uniforms[i].array_size;
 
-		RID texture;
+		Vector<RID> textures;
 
 		if (p_texture_uniforms[i].global) {
 			RendererStorageRD *rs = base_singleton;
@@ -2265,86 +2677,157 @@ void RendererStorageRD::MaterialData::update_textures(const Map<StringName, Vari
 						E->get() = global_textures_pass;
 					}
 
-					texture = v->override.get_type() != Variant::NIL ? v->override : v->value;
+					textures.push_back(v->override.get_type() != Variant::NIL ? v->override : v->value);
 				}
 
 			} else {
 				WARN_PRINT("Shader uses global uniform texture '" + String(uniform_name) + "', but it was removed at some point. Material will not display correctly.");
 			}
 		} else {
-			if (!texture.is_valid()) {
-				const Map<StringName, Variant>::Element *V = p_parameters.find(uniform_name);
-				if (V) {
-					texture = V->get();
+			const Map<StringName, Variant>::Element *V = p_parameters.find(uniform_name);
+			if (V) {
+				if (V->get().is_array()) {
+					Array array = (Array)V->get();
+					if (uniform_array_size > 0) {
+						for (int j = 0; j < array.size(); j++) {
+							textures.push_back(array[j]);
+						}
+					} else {
+						if (array.size() > 0) {
+							textures.push_back(array[0]);
+						}
+					}
+				} else {
+					textures.push_back(V->get());
 				}
 			}
 
-			if (!texture.is_valid()) {
-				const Map<StringName, RID>::Element *W = p_default_textures.find(uniform_name);
-				if (W) {
-					texture = W->get();
+			if (uniform_array_size > 0) {
+				if (textures.size() < uniform_array_size) {
+					const Map<StringName, Map<int, RID>>::Element *W = p_default_textures.find(uniform_name);
+					for (int j = textures.size(); j < uniform_array_size; j++) {
+						if (W && W->get().has(j)) {
+							textures.push_back(W->get()[j]);
+						} else {
+							textures.push_back(RID());
+						}
+					}
+				}
+			} else if (textures.is_empty()) {
+				const Map<StringName, Map<int, RID>>::Element *W = p_default_textures.find(uniform_name);
+				if (W && W->get().has(0)) {
+					textures.push_back(W->get()[0]);
 				}
 			}
 		}
 
 		RID rd_texture;
 
-		if (texture.is_null()) {
+		if (textures.is_empty()) {
 			//check default usage
-			switch (p_texture_uniforms[i].hint) {
-				case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK:
-				case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK_ALBEDO: {
-					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_BLACK);
+			switch (p_texture_uniforms[i].type) {
+				case ShaderLanguage::TYPE_ISAMPLER2D:
+				case ShaderLanguage::TYPE_USAMPLER2D:
+				case ShaderLanguage::TYPE_SAMPLER2D: {
+					switch (p_texture_uniforms[i].hint) {
+						case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK:
+						case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK_ALBEDO: {
+							rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_BLACK);
+						} break;
+						case ShaderLanguage::ShaderNode::Uniform::HINT_ANISOTROPY: {
+							rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_ANISO);
+						} break;
+						case ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL: {
+							rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_NORMAL);
+						} break;
+						case ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL: {
+							rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_NORMAL);
+						} break;
+						default: {
+							rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_WHITE);
+						} break;
+					}
 				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_NONE: {
-					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_NORMAL);
+
+				case ShaderLanguage::TYPE_SAMPLERCUBE: {
+					switch (p_texture_uniforms[i].hint) {
+						case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK:
+						case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK_ALBEDO: {
+							rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_CUBEMAP_BLACK);
+						} break;
+						default: {
+							rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_CUBEMAP_WHITE);
+						} break;
+					}
 				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_ANISO: {
-					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_ANISO);
+				case ShaderLanguage::TYPE_SAMPLERCUBEARRAY: {
+					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK);
 				} break;
+
+				case ShaderLanguage::TYPE_ISAMPLER3D:
+				case ShaderLanguage::TYPE_USAMPLER3D:
+				case ShaderLanguage::TYPE_SAMPLER3D: {
+					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_3D_WHITE);
+				} break;
+
+				case ShaderLanguage::TYPE_ISAMPLER2DARRAY:
+				case ShaderLanguage::TYPE_USAMPLER2DARRAY:
+				case ShaderLanguage::TYPE_SAMPLER2DARRAY: {
+					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
+				} break;
+
 				default: {
-					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_WHITE);
-				} break;
+				}
+			}
+#ifdef TOOLS_ENABLED
+			if (roughness_detect_texture && normal_detect_texture && !normal_detect_texture->path.is_empty()) {
+				roughness_detect_texture->detect_roughness_callback(roughness_detect_texture->detect_roughness_callback_ud, normal_detect_texture->path, roughness_channel);
+			}
+#endif
+			if (uniform_array_size > 0) {
+				for (int j = 0; j < uniform_array_size; j++) {
+					p_textures[k++] = rd_texture;
+				}
+			} else {
+				p_textures[k++] = rd_texture;
 			}
 		} else {
 			bool srgb = p_use_linear_color && (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_ALBEDO || p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_BLACK_ALBEDO);
 
-			Texture *tex = singleton->texture_owner.get_or_null(texture);
+			for (int j = 0; j < textures.size(); j++) {
+				Texture *tex = singleton->texture_owner.get_or_null(textures[j]);
 
-			if (tex) {
-				rd_texture = (srgb && tex->rd_texture_srgb.is_valid()) ? tex->rd_texture_srgb : tex->rd_texture;
+				if (tex) {
+					rd_texture = (srgb && tex->rd_texture_srgb.is_valid()) ? tex->rd_texture_srgb : tex->rd_texture;
 #ifdef TOOLS_ENABLED
-				if (tex->detect_3d_callback && p_use_linear_color) {
-					tex->detect_3d_callback(tex->detect_3d_callback_ud);
-				}
-				if (tex->detect_normal_callback && (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL || p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL)) {
-					if (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL) {
-						normal_detect_texture = tex;
+					if (tex->detect_3d_callback && p_use_linear_color) {
+						tex->detect_3d_callback(tex->detect_3d_callback_ud);
 					}
-					tex->detect_normal_callback(tex->detect_normal_callback_ud);
-				}
-				if (tex->detect_roughness_callback && (p_texture_uniforms[i].hint >= ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R || p_texture_uniforms[i].hint <= ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_GRAY)) {
-					//find the normal texture
-					roughness_detect_texture = tex;
-					roughness_channel = RS::TextureDetectRoughnessChannel(p_texture_uniforms[i].hint - ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R);
-				}
-
+					if (tex->detect_normal_callback && (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL || p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL)) {
+						if (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL) {
+							normal_detect_texture = tex;
+						}
+						tex->detect_normal_callback(tex->detect_normal_callback_ud);
+					}
+					if (tex->detect_roughness_callback && (p_texture_uniforms[i].hint >= ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R || p_texture_uniforms[i].hint <= ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_GRAY)) {
+						//find the normal texture
+						roughness_detect_texture = tex;
+						roughness_channel = RS::TextureDetectRoughnessChannel(p_texture_uniforms[i].hint - ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R);
+					}
 #endif
-			}
-
-			if (rd_texture.is_null()) {
-				//wtf
-				rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_WHITE);
+				}
+				if (rd_texture.is_null()) {
+					rd_texture = singleton->texture_rd_get_default(DEFAULT_RD_TEXTURE_WHITE);
+				}
+#ifdef TOOLS_ENABLED
+				if (roughness_detect_texture && normal_detect_texture && !normal_detect_texture->path.is_empty()) {
+					roughness_detect_texture->detect_roughness_callback(roughness_detect_texture->detect_roughness_callback_ud, normal_detect_texture->path, roughness_channel);
+				}
+#endif
+				p_textures[k++] = rd_texture;
 			}
 		}
-
-		p_textures[i] = rd_texture;
 	}
-#ifdef TOOLS_ENABLED
-	if (roughness_detect_texture && normal_detect_texture && normal_detect_texture->path != String()) {
-		roughness_detect_texture->detect_roughness_callback(roughness_detect_texture->detect_roughness_callback_ud, normal_detect_texture->path, roughness_channel);
-	}
-#endif
 	{
 		//for textures no longer used, unregister them
 		List<Map<StringName, uint64_t>::Element *> to_delete;
@@ -2384,7 +2867,7 @@ void RendererStorageRD::MaterialData::free_parameters_uniform_set(RID p_uniform_
 	}
 }
 
-bool RendererStorageRD::MaterialData::update_parameters_uniform_set(const Map<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty, const Map<StringName, ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const Vector<ShaderCompilerRD::GeneratedCode::Texture> &p_texture_uniforms, const Map<StringName, RID> &p_default_texture_params, uint32_t p_ubo_size, RID &uniform_set, RID p_shader, uint32_t p_shader_uniform_set, uint32_t p_barrier) {
+bool RendererStorageRD::MaterialData::update_parameters_uniform_set(const Map<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty, const Map<StringName, ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, const Map<StringName, Map<int, RID>> &p_default_texture_params, uint32_t p_ubo_size, RID &uniform_set, RID p_shader, uint32_t p_shader_uniform_set, uint32_t p_barrier) {
 	if ((uint32_t)ubo_data.size() != p_ubo_size) {
 		p_uniform_dirty = true;
 		if (uniform_buffer.is_valid()) {
@@ -2408,11 +2891,14 @@ bool RendererStorageRD::MaterialData::update_parameters_uniform_set(const Map<St
 
 	//check whether buffer changed
 	if (p_uniform_dirty && ubo_data.size()) {
-		update_uniform_buffer(p_uniforms, p_uniform_offsets, p_parameters, ubo_data.ptrw(), ubo_data.size(), false);
+		update_uniform_buffer(p_uniforms, p_uniform_offsets, p_parameters, ubo_data.ptrw(), ubo_data.size(), true);
 		RD::get_singleton()->buffer_update(uniform_buffer, 0, ubo_data.size(), ubo_data.ptrw(), p_barrier);
 	}
 
-	uint32_t tex_uniform_count = p_texture_uniforms.size();
+	uint32_t tex_uniform_count = 0U;
+	for (int i = 0; i < p_texture_uniforms.size(); i++) {
+		tex_uniform_count += uint32_t(p_texture_uniforms[i].array_size > 0 ? p_texture_uniforms[i].array_size : 1);
+	}
 
 	if ((uint32_t)texture_cache.size() != tex_uniform_count || p_textures_dirty) {
 		texture_cache.resize(tex_uniform_count);
@@ -2452,11 +2938,19 @@ bool RendererStorageRD::MaterialData::update_parameters_uniform_set(const Map<St
 		}
 
 		const RID *textures = texture_cache.ptrw();
-		for (uint32_t i = 0; i < tex_uniform_count; i++) {
+		for (int i = 0, k = 0; i < p_texture_uniforms.size(); i++) {
+			const int array_size = p_texture_uniforms[i].array_size;
+
 			RD::Uniform u;
 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
-			u.binding = 1 + i;
-			u.ids.push_back(textures[i]);
+			u.binding = 1 + k;
+			if (array_size > 0) {
+				for (int j = 0; j < array_size; j++) {
+					u.ids.push_back(textures[k++]);
+				}
+			} else {
+				u.ids.push_back(textures[k++]);
+			}
 			uniforms.push_back(u);
 		}
 	}
@@ -2468,21 +2962,16 @@ bool RendererStorageRD::MaterialData::update_parameters_uniform_set(const Map<St
 	return true;
 }
 
-void RendererStorageRD::_material_uniform_set_erased(const RID &p_set, void *p_material) {
+void RendererStorageRD::_material_uniform_set_erased(void *p_material) {
 	RID rid = *(RID *)p_material;
 	Material *material = base_singleton->material_owner.get_or_null(rid);
 	if (material) {
+		if (material->data) {
+			// Uniform set may be gone because a dependency was erased. This happens
+			// if a texture is deleted, so re-create it.
+			base_singleton->_material_queue_update(material, false, true);
+		}
 		material->dependency.changed_notify(DEPENDENCY_CHANGED_MATERIAL);
-	}
-}
-
-void RendererStorageRD::material_force_update_textures(RID p_material, ShaderType p_shader_type) {
-	Material *material = material_owner.get_or_null(p_material);
-	if (material->shader_type != p_shader_type) {
-		return;
-	}
-	if (material->data) {
-		material->data->update_parameters(material->params, false, true);
 	}
 }
 
@@ -3300,7 +3789,7 @@ void RendererStorageRD::_mesh_surface_generate_version_for_input_mask(Mesh::Surf
 				} break;
 				case RS::ARRAY_WEIGHTS: {
 					//assumed weights too
-					vd.format = RD::DATA_FORMAT_R32G32B32A32_UINT;
+					vd.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
 				} break;
 			}
 		} else {
@@ -3539,7 +4028,7 @@ void RendererStorageRD::_multimesh_make_local(MultiMesh *multimesh) const {
 				memcpy(w, r, buffer.size());
 			}
 		} else {
-			memset(w, 0, multimesh->instances * multimesh->stride_cache * sizeof(float));
+			memset(w, 0, (size_t)multimesh->instances * multimesh->stride_cache * sizeof(float));
 		}
 	}
 	uint32_t data_cache_dirty_region_count = (multimesh->instances - 1) / MULTIMESH_DIRTY_REGION_SIZE + 1;
@@ -3952,14 +4441,15 @@ void RendererStorageRD::_update_dirty_multimeshes() {
 
 				if (multimesh->data_cache_used_dirty_regions > 32 || multimesh->data_cache_used_dirty_regions > visible_region_count / 2) {
 					//if there too many dirty regions, or represent the majority of regions, just copy all, else transfer cost piles up too much
-					RD::get_singleton()->buffer_update(multimesh->buffer, 0, MIN(visible_region_count * region_size, multimesh->instances * multimesh->stride_cache * sizeof(float)), data);
+					RD::get_singleton()->buffer_update(multimesh->buffer, 0, MIN(visible_region_count * region_size, multimesh->instances * (uint32_t)multimesh->stride_cache * (uint32_t)sizeof(float)), data);
 				} else {
 					//not that many regions? update them all
 					for (uint32_t i = 0; i < visible_region_count; i++) {
 						if (multimesh->data_cache_dirty_regions[i]) {
-							uint64_t offset = i * region_size;
-							uint64_t size = multimesh->stride_cache * multimesh->instances * sizeof(float);
-							RD::get_singleton()->buffer_update(multimesh->buffer, offset, MIN(region_size, size - offset), &data[i * region_size]);
+							uint32_t offset = i * region_size;
+							uint32_t size = multimesh->stride_cache * (uint32_t)multimesh->instances * (uint32_t)sizeof(float);
+							uint32_t region_start_index = multimesh->stride_cache * MULTIMESH_DIRTY_REGION_SIZE * i;
+							RD::get_singleton()->buffer_update(multimesh->buffer, offset, MIN(region_size, size - offset), &data[region_start_index]);
 						}
 					}
 				}
@@ -5244,14 +5734,14 @@ void RendererStorageRD::ParticlesShaderData::set_code(const String &p_code) {
 	uniforms.clear();
 	uses_collision = false;
 
-	if (code == String()) {
+	if (code.is_empty()) {
 		return; //just invalid, but no error
 	}
 
-	ShaderCompilerRD::GeneratedCode gen_code;
-	ShaderCompilerRD::IdentifierActions actions;
-	actions.entry_point_stages["start"] = ShaderCompilerRD::STAGE_COMPUTE;
-	actions.entry_point_stages["process"] = ShaderCompilerRD::STAGE_COMPUTE;
+	ShaderCompiler::GeneratedCode gen_code;
+	ShaderCompiler::IdentifierActions actions;
+	actions.entry_point_stages["start"] = ShaderCompiler::STAGE_COMPUTE;
+	actions.entry_point_stages["process"] = ShaderCompiler::STAGE_COMPUTE;
 
 	/*
 	uses_time = false;
@@ -5273,7 +5763,7 @@ void RendererStorageRD::ParticlesShaderData::set_code(const String &p_code) {
 		version = base_singleton->particles_shader.shader.version_create();
 	}
 
-	base_singleton->particles_shader.shader.version_set_compute_code(version, gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompilerRD::STAGE_COMPUTE], gen_code.defines);
+	base_singleton->particles_shader.shader.version_set_compute_code(version, gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_COMPUTE], gen_code.defines);
 	ERR_FAIL_COND(!base_singleton->particles_shader.shader.version_is_valid(version));
 
 	ubo_size = gen_code.uniform_total_size;
@@ -5287,11 +5777,20 @@ void RendererStorageRD::ParticlesShaderData::set_code(const String &p_code) {
 	valid = true;
 }
 
-void RendererStorageRD::ParticlesShaderData::set_default_texture_param(const StringName &p_name, RID p_texture) {
+void RendererStorageRD::ParticlesShaderData::set_default_texture_param(const StringName &p_name, RID p_texture, int p_index) {
 	if (!p_texture.is_valid()) {
-		default_texture_params.erase(p_name);
+		if (default_texture_params.has(p_name) && default_texture_params[p_name].has(p_index)) {
+			default_texture_params[p_name].erase(p_index);
+
+			if (default_texture_params[p_name].is_empty()) {
+				default_texture_params.erase(p_name);
+			}
+		}
 	} else {
-		default_texture_params[p_name] = p_texture;
+		if (!default_texture_params.has(p_name)) {
+			default_texture_params[p_name] = Map<int, RID>();
+		}
+		default_texture_params[p_name][p_index] = p_texture;
 	}
 }
 
@@ -5327,7 +5826,7 @@ void RendererStorageRD::ParticlesShaderData::get_instance_param_list(List<Render
 		p.info = ShaderLanguage::uniform_to_property_info(E.value);
 		p.info.name = E.key; //supply name
 		p.index = E.value.instance_index;
-		p.default_value = ShaderLanguage::constant_value_to_variant(E.value.default_value, E.value.type, E.value.hint);
+		p.default_value = ShaderLanguage::constant_value_to_variant(E.value.default_value, E.value.type, E.value.array_size, E.value.hint);
 		p_param_list->push_back(p);
 	}
 }
@@ -5352,7 +5851,7 @@ Variant RendererStorageRD::ParticlesShaderData::get_default_parameter(const Stri
 	if (uniforms.has(p_parameter)) {
 		ShaderLanguage::ShaderNode::Uniform uniform = uniforms[p_parameter];
 		Vector<ShaderLanguage::ConstantNode::Value> default_value = uniform.default_value;
-		return ShaderLanguage::constant_value_to_variant(default_value, uniform.type, uniform.hint);
+		return ShaderLanguage::constant_value_to_variant(default_value, uniform.type, uniform.array_size, uniform.hint);
 	}
 	return Variant();
 }
@@ -5378,8 +5877,6 @@ RendererStorageRD::ShaderData *RendererStorageRD::_create_particles_shader_func(
 }
 
 bool RendererStorageRD::ParticlesMaterialData::update_parameters(const Map<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) {
-	uniform_set_updated = true;
-
 	return update_parameters_uniform_set(p_parameters, p_uniform_dirty, p_textures_dirty, shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms, shader_data->default_texture_params, shader_data->ubo_size, uniform_set, base_singleton->particles_shader.shader.version_get_shader(shader_data->version, 0), 3);
 }
 
@@ -5390,7 +5887,6 @@ RendererStorageRD::ParticlesMaterialData::~ParticlesMaterialData() {
 RendererStorageRD::MaterialData *RendererStorageRD::_create_particles_material_func(ParticlesShaderData *p_shader) {
 	ParticlesMaterialData *material_data = memnew(ParticlesMaterialData);
 	material_data->shader_data = p_shader;
-	material_data->last_frame = false;
 	//update will happen later anyway so do nothing.
 	return material_data;
 }
@@ -5578,6 +6074,82 @@ void RendererStorageRD::particles_collision_instance_set_active(RID p_collision_
 	ParticlesCollisionInstance *pci = particles_collision_instance_owner.get_or_null(p_collision_instance);
 	ERR_FAIL_COND(!pci);
 	pci->active = p_active;
+}
+
+/* FOG VOLUMES */
+
+RID RendererStorageRD::fog_volume_allocate() {
+	return fog_volume_owner.allocate_rid();
+}
+void RendererStorageRD::fog_volume_initialize(RID p_rid) {
+	fog_volume_owner.initialize_rid(p_rid, FogVolume());
+}
+
+void RendererStorageRD::fog_volume_set_shape(RID p_fog_volume, RS::FogVolumeShape p_shape) {
+	FogVolume *fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
+	ERR_FAIL_COND(!fog_volume);
+
+	if (p_shape == fog_volume->shape) {
+		return;
+	}
+
+	fog_volume->shape = p_shape;
+	fog_volume->dependency.changed_notify(DEPENDENCY_CHANGED_AABB);
+}
+
+void RendererStorageRD::fog_volume_set_extents(RID p_fog_volume, const Vector3 &p_extents) {
+	FogVolume *fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
+	ERR_FAIL_COND(!fog_volume);
+
+	fog_volume->extents = p_extents;
+	fog_volume->dependency.changed_notify(DEPENDENCY_CHANGED_AABB);
+}
+
+void RendererStorageRD::fog_volume_set_material(RID p_fog_volume, RID p_material) {
+	FogVolume *fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
+	ERR_FAIL_COND(!fog_volume);
+	fog_volume->material = p_material;
+}
+
+RID RendererStorageRD::fog_volume_get_material(RID p_fog_volume) const {
+	FogVolume *fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
+	ERR_FAIL_COND_V(!fog_volume, RID());
+
+	return fog_volume->material;
+}
+
+RS::FogVolumeShape RendererStorageRD::fog_volume_get_shape(RID p_fog_volume) const {
+	FogVolume *fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
+	ERR_FAIL_COND_V(!fog_volume, RS::FOG_VOLUME_SHAPE_BOX);
+
+	return fog_volume->shape;
+}
+
+AABB RendererStorageRD::fog_volume_get_aabb(RID p_fog_volume) const {
+	FogVolume *fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
+	ERR_FAIL_COND_V(!fog_volume, AABB());
+
+	switch (fog_volume->shape) {
+		case RS::FOG_VOLUME_SHAPE_ELLIPSOID:
+		case RS::FOG_VOLUME_SHAPE_BOX: {
+			AABB aabb;
+			aabb.position = -fog_volume->extents;
+			aabb.size = fog_volume->extents * 2;
+			return aabb;
+		}
+		default: {
+			// Need some size otherwise will get culled
+			return AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
+		}
+	}
+
+	return AABB();
+}
+
+Vector3 RendererStorageRD::fog_volume_get_extents(RID p_fog_volume) const {
+	const FogVolume *fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
+	ERR_FAIL_COND_V(!fog_volume, Vector3());
+	return fog_volume->extents;
 }
 
 /* VISIBILITY NOTIFIER */
@@ -6216,11 +6788,11 @@ void RendererStorageRD::reflection_probe_set_resolution(RID p_probe, int p_resol
 	reflection_probe->resolution = p_resolution;
 }
 
-void RendererStorageRD::reflection_probe_set_lod_threshold(RID p_probe, float p_ratio) {
+void RendererStorageRD::reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_ratio) {
 	ReflectionProbe *reflection_probe = reflection_probe_owner.get_or_null(p_probe);
 	ERR_FAIL_COND(!reflection_probe);
 
-	reflection_probe->lod_threshold = p_ratio;
+	reflection_probe->mesh_lod_threshold = p_ratio;
 
 	reflection_probe->dependency.changed_notify(DEPENDENCY_CHANGED_REFLECTION_PROBE);
 }
@@ -6278,11 +6850,11 @@ float RendererStorageRD::reflection_probe_get_origin_max_distance(RID p_probe) c
 	return reflection_probe->max_distance;
 }
 
-float RendererStorageRD::reflection_probe_get_lod_threshold(RID p_probe) const {
+float RendererStorageRD::reflection_probe_get_mesh_lod_threshold(RID p_probe) const {
 	const ReflectionProbe *reflection_probe = reflection_probe_owner.get_or_null(p_probe);
 	ERR_FAIL_COND_V(!reflection_probe, 0);
 
-	return reflection_probe->lod_threshold;
+	return reflection_probe->mesh_lod_threshold;
 }
 
 int RendererStorageRD::reflection_probe_get_resolution(RID p_probe) const {
@@ -7661,6 +8233,9 @@ void RendererStorageRD::base_update_dependency(RID p_base, DependencyTracker *p_
 	} else if (particles_collision_owner.owns(p_base)) {
 		ParticlesCollision *pc = particles_collision_owner.get_or_null(p_base);
 		p_instance->update_dependency(&pc->dependency);
+	} else if (fog_volume_owner.owns(p_base)) {
+		FogVolume *fv = fog_volume_owner.get_or_null(p_base);
+		p_instance->update_dependency(&fv->dependency);
 	} else if (visibility_notifier_owner.owns(p_base)) {
 		VisibilityNotifier *vn = visibility_notifier_owner.get_or_null(p_base);
 		p_instance->update_dependency(&vn->dependency);
@@ -7701,6 +8276,9 @@ RS::InstanceType RendererStorageRD::get_base_type(RID p_rid) const {
 	}
 	if (particles_collision_owner.owns(p_rid)) {
 		return RS::INSTANCE_PARTICLES_COLLISION;
+	}
+	if (fog_volume_owner.owns(p_rid)) {
+		return RS::INSTANCE_FOG_VOLUME;
 	}
 	if (visibility_notifier_owner.owns(p_rid)) {
 		return RS::INSTANCE_VISIBLITY_NOTIFIER;
@@ -8551,7 +9129,7 @@ void RendererStorageRD::global_variables_instance_update(RID p_instance, int p_i
 
 	pos += p_index;
 
-	_fill_std140_variant_ubo_value(datatype, p_value, (uint8_t *)&global_variables.buffer_values[pos], true); //instances always use linear color in this renderer
+	_fill_std140_variant_ubo_value(datatype, 0, p_value, (uint8_t *)&global_variables.buffer_values[pos], true); //instances always use linear color in this renderer
 	_global_variable_mark_buffer_dirty(pos, 1);
 }
 
@@ -8567,7 +9145,7 @@ void RendererStorageRD::_update_global_variables() {
 
 			for (uint32_t i = 0; i < total_regions; i++) {
 				if (global_variables.buffer_dirty_regions[i]) {
-					RD::get_singleton()->buffer_update(global_variables.buffer, i * region_byte_size, region_byte_size, global_variables.buffer_values);
+					RD::get_singleton()->buffer_update(global_variables.buffer, i * region_byte_size, region_byte_size, &global_variables.buffer_values[i * GlobalVariables::BUFFER_DIRTY_REGION_SIZE]);
 
 					global_variables.buffer_dirty_regions[i] = false;
 				}
@@ -8598,7 +9176,6 @@ void RendererStorageRD::_update_global_variables() {
 			ERR_CONTINUE(!material); //wtf
 
 			_material_queue_update(material, false, true);
-			print_line("update material texture?");
 		}
 
 		global_variables.must_update_texture_materials = false;
@@ -8627,10 +9204,6 @@ bool RendererStorageRD::has_os_feature(const String &p_feature) const {
 	}
 
 	if ((p_feature == "etc" || p_feature == "etc2") && RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
-		return true;
-	}
-
-	if (p_feature == "pvrtc" && RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
@@ -8784,6 +9357,10 @@ bool RendererStorageRD::free(RID p_rid) {
 		visibility_notifier_owner.free(p_rid);
 	} else if (particles_collision_instance_owner.owns(p_rid)) {
 		particles_collision_instance_owner.free(p_rid);
+	} else if (fog_volume_owner.owns(p_rid)) {
+		FogVolume *fog_volume = fog_volume_owner.get_or_null(p_rid);
+		fog_volume->dependency.deleted_notify(p_rid);
+		fog_volume_owner.free(p_rid);
 	} else if (render_target_owner.owns(p_rid)) {
 		RenderTarget *rt = render_target_owner.get_or_null(p_rid);
 
@@ -8859,8 +9436,13 @@ uint64_t RendererStorageRD::get_rendering_info(RS::RenderingInfo p_info) {
 String RendererStorageRD::get_video_adapter_name() const {
 	return RenderingDevice::get_singleton()->get_device_name();
 }
+
 String RendererStorageRD::get_video_adapter_vendor() const {
 	return RenderingDevice::get_singleton()->get_device_vendor_name();
+}
+
+RenderingDevice::DeviceType RendererStorageRD::get_video_adapter_type() const {
+	return RenderingDevice::get_singleton()->get_device_type();
 }
 
 RendererStorageRD *RendererStorageRD::base_singleton = nullptr;
@@ -9080,6 +9662,18 @@ RendererStorageRD::RendererStorageRD() {
 		{
 			Vector<Vector<uint8_t>> vpv;
 			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_3D_BLACK] = RD::get_singleton()->texture_create(tformat, RD::TextureView(), vpv);
+		}
+		for (int i = 0; i < 64; i++) {
+			pv.set(i * 4 + 0, 255);
+			pv.set(i * 4 + 1, 255);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
 			default_rd_textures[DEFAULT_RD_TEXTURE_3D_WHITE] = RD::get_singleton()->texture_create(tformat, RD::TextureView(), vpv);
 		}
 	}
@@ -9194,6 +9788,9 @@ RendererStorageRD::RendererStorageRD() {
 			default_rd_samplers[i][j] = RD::get_singleton()->sampler_create(sampler_state);
 		}
 	}
+
+	//custom sampler
+	sampler_rd_configure_custom(0.0f);
 
 	//default rd buffers
 	{
@@ -9338,7 +9935,7 @@ RendererStorageRD::RendererStorageRD() {
 	material_set_data_request_function(RendererStorageRD::SHADER_TYPE_PARTICLES, _create_particles_material_funcs);
 
 	{
-		ShaderCompilerRD::DefaultIdentifierActions actions;
+		ShaderCompiler::DefaultIdentifierActions actions;
 
 		actions.renames["COLOR"] = "PARTICLE.color";
 		actions.renames["VELOCITY"] = "PARTICLE.velocity";
@@ -9347,7 +9944,7 @@ RendererStorageRD::RendererStorageRD() {
 		actions.renames["RESTART"] = "restart";
 		actions.renames["CUSTOM"] = "PARTICLE.custom";
 		actions.renames["TRANSFORM"] = "PARTICLE.xform";
-		actions.renames["TIME"] = "FRAME.time";
+		actions.renames["TIME"] = "frame_history.data[0].time";
 		actions.renames["PI"] = _MKSTR(Math_PI);
 		actions.renames["TAU"] = _MKSTR(Math_TAU);
 		actions.renames["E"] = _MKSTR(Math_E);
@@ -9525,6 +10122,15 @@ RendererStorageRD::~RendererStorageRD() {
 		}
 	}
 
+	//custom samplers
+	for (int i = 1; i < RS::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
+		for (int j = 0; j < RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
+			if (custom_rd_samplers[i][j].is_valid()) {
+				RD::get_singleton()->free(custom_rd_samplers[i][j]);
+			}
+		}
+	}
+
 	//def buffers
 	for (int i = 0; i < DEFAULT_RD_BUFFER_MAX; i++) {
 		RD::get_singleton()->free(mesh_default_rd_buffers[i]);
@@ -9550,6 +10156,6 @@ RendererStorageRD::~RendererStorageRD() {
 
 	if (effects) {
 		memdelete(effects);
-		effects = NULL;
+		effects = nullptr;
 	}
 }

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -112,6 +112,7 @@ private:
 	Size2i content_scale_size;
 	ContentScaleMode content_scale_mode = CONTENT_SCALE_MODE_DISABLED;
 	ContentScaleAspect content_scale_aspect = CONTENT_SCALE_ASPECT_IGNORE;
+	real_t content_scale_factor = 1.0;
 
 	void _make_window();
 	void _clear_window();
@@ -178,6 +179,7 @@ public:
 
 	void set_size(const Size2i &p_size);
 	Size2i get_size() const;
+	void reset_size();
 
 	Size2i get_real_size() const;
 
@@ -229,6 +231,9 @@ public:
 	void set_content_scale_aspect(ContentScaleAspect p_aspect);
 	ContentScaleAspect get_content_scale_aspect() const;
 
+	void set_content_scale_factor(real_t p_factor);
+	real_t get_content_scale_factor() const;
+
 	void set_use_font_oversampling(bool p_oversampling);
 	bool is_using_font_oversampling() const;
 
@@ -279,6 +284,10 @@ public:
 	bool has_theme_font_size(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
 	bool has_theme_color(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
 	bool has_theme_constant(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
+
+	float get_theme_default_base_scale() const;
+	Ref<Font> get_theme_default_font() const;
+	int get_theme_default_font_size() const;
 
 	Rect2i get_parent_rect() const;
 	virtual DisplayServer::WindowID get_window_id() const override;

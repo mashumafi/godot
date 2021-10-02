@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -27,10 +27,6 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
-
-/**
- * @author AndreaCatania
- */
 
 #include "skeleton_ik_3d.h"
 
@@ -291,14 +287,10 @@ void FabrikInverseKinematic::solve(Task *p_task, real_t blending_delta, bool ove
 		new_bone_pose.origin = ci->current_pos;
 
 		if (!ci->children.is_empty()) {
-			/// Rotate basis
-			const Vector3 initial_ori((ci->children[0].initial_transform.origin - ci->initial_transform.origin).normalized());
-			const Vector3 rot_axis(initial_ori.cross(ci->current_ori).normalized());
-
-			if (rot_axis[0] != 0 && rot_axis[1] != 0 && rot_axis[2] != 0) {
-				const real_t rot_angle(Math::acos(CLAMP(initial_ori.dot(ci->current_ori), -1, 1)));
-				new_bone_pose.basis.rotate(rot_axis, rot_angle);
-			}
+			p_task->skeleton->update_bone_rest_forward_vector(ci->bone);
+			Vector3 forward_vector = p_task->skeleton->get_bone_axis_forward_vector(ci->bone);
+			// Rotate the bone towards the next bone in the chain:
+			new_bone_pose.basis.rotate_to_align(forward_vector, new_bone_pose.origin.direction_to(ci->children[0].current_pos));
 
 		} else {
 			// Set target orientation to tip
@@ -355,6 +347,8 @@ void SkeletonIK3D::_validate_property(PropertyInfo &property) const {
 			property.hint_string = "";
 		}
 	}
+
+	Node::_validate_property(property);
 }
 
 void SkeletonIK3D::_bind_methods() {

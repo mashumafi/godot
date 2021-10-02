@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
+#if TOOLS_ENABLED
 #include "editor_scene_exporter_gltf_plugin.h"
 #include "core/config/project_settings.h"
 #include "core/error/error_list.h"
@@ -35,6 +36,7 @@
 #include "core/templates/vector.h"
 #include "editor/editor_file_system.h"
 #include "gltf_document.h"
+#include "gltf_state.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/gui/check_box.h"
 #include "scene/main/node.h"
@@ -74,7 +76,15 @@ void SceneExporterGLTFPlugin::_gltf2_dialog_action(String p_file) {
 	List<String> deps;
 	Ref<GLTFDocument> doc;
 	doc.instantiate();
-	Error err = doc->save_scene(root, p_file, p_file, 0, 30.0f, Ref<GLTFState>());
+	Ref<GLTFState> state;
+	state.instantiate();
+	int32_t flags = 0;
+	flags |= EditorSceneFormatImporter::IMPORT_USE_NAMED_SKIN_BINDS;
+	Error err = doc->append_from_scene(root, state, flags, 30.0f);
+	if (err != OK) {
+		ERR_PRINT(vformat("glTF2 save scene error %s.", itos(err)));
+	}
+	err = doc->write_to_filesystem(state, p_file);
 	if (err != OK) {
 		ERR_PRINT(vformat("glTF2 save scene error %s.", itos(err)));
 	}
@@ -93,3 +103,5 @@ void SceneExporterGLTFPlugin::convert_scene_to_gltf2() {
 	file_export_lib->set_current_file(filename + String(".gltf"));
 	file_export_lib->popup_centered_ratio();
 }
+
+#endif // TOOLS_ENABLED

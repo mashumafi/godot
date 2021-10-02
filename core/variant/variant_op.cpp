@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -641,7 +641,10 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorNotFloat>(Variant::OP_NOT, Variant::FLOAT, Variant::NIL);
 	register_op<OperatorEvaluatorNotObject>(Variant::OP_NOT, Variant::OBJECT, Variant::NIL);
 
-	register_op<OperatorEvaluatorInStringFind>(Variant::OP_IN, Variant::STRING, Variant::STRING);
+	register_op<OperatorEvaluatorInStringFind<String>>(Variant::OP_IN, Variant::STRING, Variant::STRING);
+	register_op<OperatorEvaluatorInStringFind<StringName>>(Variant::OP_IN, Variant::STRING_NAME, Variant::STRING);
+	register_op<OperatorEvaluatorInStringNameFind<String>>(Variant::OP_IN, Variant::STRING, Variant::STRING_NAME);
+	register_op<OperatorEvaluatorInStringNameFind<StringName>>(Variant::OP_IN, Variant::STRING_NAME, Variant::STRING_NAME);
 
 	register_op<OperatorEvaluatorInDictionaryHasNil>(Variant::OP_IN, Variant::NIL, Variant::DICTIONARY);
 	register_op<OperatorEvaluatorInDictionaryHas<bool>>(Variant::OP_IN, Variant::BOOL, Variant::DICTIONARY);

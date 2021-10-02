@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -775,6 +775,7 @@ public:
 		r_valid = true;
 	}
 	static inline void validated_evaluate(const Variant *left, const Variant *right, Variant *r_ret) {
+		*r_ret = Array();
 		_add_arrays(*VariantGetInternalPtr<Array>::get_ptr(r_ret), *VariantGetInternalPtr<Array>::get_ptr(left), *VariantGetInternalPtr<Array>::get_ptr(right));
 	}
 	static void ptr_evaluate(const void *left, const void *right, void *r_ret) {
@@ -1213,22 +1214,44 @@ public:
 
 ////
 
+template <class Left>
 class OperatorEvaluatorInStringFind {
 public:
 	static void evaluate(const Variant &p_left, const Variant &p_right, Variant *r_ret, bool &r_valid) {
-		const String &str_a = *VariantGetInternalPtr<String>::get_ptr(&p_left);
+		const Left &str_a = *VariantGetInternalPtr<Left>::get_ptr(&p_left);
 		const String &str_b = *VariantGetInternalPtr<String>::get_ptr(&p_right);
 
 		*r_ret = str_b.find(str_a) != -1;
 		r_valid = true;
 	}
 	static inline void validated_evaluate(const Variant *left, const Variant *right, Variant *r_ret) {
-		const String &str_a = *VariantGetInternalPtr<String>::get_ptr(left);
+		const Left &str_a = *VariantGetInternalPtr<Left>::get_ptr(left);
 		const String &str_b = *VariantGetInternalPtr<String>::get_ptr(right);
 		*VariantGetInternalPtr<bool>::get_ptr(r_ret) = str_b.find(str_a) != -1;
 	}
 	static void ptr_evaluate(const void *left, const void *right, void *r_ret) {
-		PtrToArg<bool>::encode(PtrToArg<String>::convert(right).find(PtrToArg<String>::convert(left)) != -1, r_ret);
+		PtrToArg<bool>::encode(PtrToArg<String>::convert(right).find(PtrToArg<Left>::convert(left)) != -1, r_ret);
+	}
+	static Variant::Type get_return_type() { return Variant::BOOL; }
+};
+
+template <class Left>
+class OperatorEvaluatorInStringNameFind {
+public:
+	static void evaluate(const Variant &p_left, const Variant &p_right, Variant *r_ret, bool &r_valid) {
+		const Left &str_a = *VariantGetInternalPtr<Left>::get_ptr(&p_left);
+		const String str_b = VariantGetInternalPtr<StringName>::get_ptr(&p_right)->operator String();
+
+		*r_ret = str_b.find(str_a) != -1;
+		r_valid = true;
+	}
+	static inline void validated_evaluate(const Variant *left, const Variant *right, Variant *r_ret) {
+		const Left &str_a = *VariantGetInternalPtr<Left>::get_ptr(left);
+		const String str_b = VariantGetInternalPtr<StringName>::get_ptr(right)->operator String();
+		*VariantGetInternalPtr<bool>::get_ptr(r_ret) = str_b.find(str_a) != -1;
+	}
+	static void ptr_evaluate(const void *left, const void *right, void *r_ret) {
+		PtrToArg<bool>::encode(PtrToArg<StringName>::convert(right).operator String().find(PtrToArg<Left>::convert(left)) != -1, r_ret);
 	}
 	static Variant::Type get_return_type() { return Variant::BOOL; }
 };

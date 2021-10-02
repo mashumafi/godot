@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -87,7 +87,7 @@ OSIPhone *OSIPhone::get_singleton() {
 	return (OSIPhone *)OS::get_singleton();
 }
 
-OSIPhone::OSIPhone(String p_data_dir) {
+OSIPhone::OSIPhone(String p_data_dir, String p_cache_dir) {
 	for (int i = 0; i < ios_init_callbacks_count; ++i) {
 		ios_init_callbacks[i]();
 	}
@@ -101,6 +101,7 @@ OSIPhone::OSIPhone(String p_data_dir) {
 	// can't call set_data_dir from here, since it requires DirAccess
 	// which is initialized in initialize_core
 	user_data_dir = p_data_dir;
+	cache_dir = p_cache_dir;
 
 	Vector<Logger *> loggers;
 	loggers.push_back(memnew(SyslogLogger));
@@ -264,6 +265,10 @@ void OSIPhone::set_user_data_dir(String p_dir) {
 
 String OSIPhone::get_user_data_dir() const {
 	return user_data_dir;
+}
+
+String OSIPhone::get_cache_path() const {
+	return cache_dir;
 }
 
 String OSIPhone::get_locale() const {
