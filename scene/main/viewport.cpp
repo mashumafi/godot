@@ -3181,6 +3181,7 @@ void Viewport::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_using_own_world"), &Viewport::is_using_own_world);
 
 	ClassDB::bind_method(D_METHOD("get_camera"), &Viewport::get_camera);
+	ClassDB::bind_method(D_METHOD("get_listener_2d"), &Viewport::get_listener_2d);
 
 	ClassDB::bind_method(D_METHOD("set_as_audio_listener", "enable"), &Viewport::set_as_audio_listener);
 	ClassDB::bind_method(D_METHOD("is_audio_listener"), &Viewport::is_audio_listener);

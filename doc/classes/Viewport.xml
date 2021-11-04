@@ -46,6 +46,12 @@
 				Returns the total transform of the viewport.
 			</description>
 		</method>
+		<method name="get_listener_2d" qualifiers="const">
+			<return type="Listener2D" />
+			<description>
+				Returns the active 2D listener.
+			</description>
+		</method>
 		<method name="get_modal_stack_top" qualifiers="const">
 			<return type="Control" />
 			<description>
