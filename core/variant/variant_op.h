@@ -33,6 +33,7 @@
 
 #include "variant.h"
 
+#include "container_type_validate.h"
 #include "core/core_string_names.h"
 #include "core/debugger/engine_debugger.h"
 #include "core/object/class_db.h"
@@ -824,6 +825,21 @@ public:
 	_FORCE_INLINE_ static void _add_arrays(Array &sum, const Array &array_a, const Array &array_b) {
 		int asize = array_a.size();
 		int bsize = array_b.size();
+
+		ContainerTypeValidate type_a;
+		type_a.type = (Variant::Type)array_a.get_typed_builtin();
+		type_a.class_name = array_a.get_typed_class_name();
+		type_a.script = array_a.get_typed_script();
+
+		ContainerTypeValidate type_b;
+		type_b.type = (Variant::Type)array_b.get_typed_builtin();
+		type_b.class_name = array_b.get_typed_class_name();
+		type_b.script = array_b.get_typed_script();
+
+		type_a.mix(type_b);
+
+		sum.set_typed(type_b.type, type_b.class_name, type_b.script);
+
 		sum.resize(asize + bsize);
 		for (int i = 0; i < asize; i++) {
 			sum[i] = array_a[i];

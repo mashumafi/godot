@@ -141,6 +141,44 @@ struct ContainerTypeValidate {
 
 		return true;
 	}
+
+	// mix 2 types together producing a narrow conversion of types
+	// returns true if type information was retained
+	bool mix(ContainerTypeValidate &inout_type) const {
+		if (type == Variant::OBJECT && inout_type.type == Variant::OBJECT) {
+			if (script.is_valid() && inout_type.script.is_valid()) {
+				Ref<Script> script_a = script;
+				const Ref<Script> &script_b = inout_type.script;
+
+				while (script_a.is_valid() && !script_b->inherits_script(script_a)) {
+					script_a = script_a->get_base_script();
+				}
+				if (script_a.is_valid()) {
+					inout_type.script = script_a;
+					return true;
+				}
+				inout_type.script = Variant();
+			}
+
+			StringName class_name_a = class_name;
+			const StringName &class_name_b = inout_type.class_name;
+
+			while (!ClassDB::is_parent_class(class_name_b, class_name_a)) {
+				class_name_a = ClassDB::get_parent_class(class_name_a);
+			}
+
+			inout_type.class_name = class_name_a;
+			return true;
+		} else if (type == inout_type.type) {
+			// inout_type already has correct type
+			return true;
+		}
+
+		inout_type.type = Variant::NIL;
+		inout_type.class_name = "";
+		inout_type.script = Variant();
+		return false;
+	}
 };
 
 #endif // CONTAINER_TYPE_VALIDATE_H
